@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 
 export default function ExamplesPage() {
-  // Sample ad examples
+  // Sample ad examples with realistic images
   const adExamples = [
     {
       id: 1,
@@ -11,7 +11,7 @@ export default function ExamplesPage() {
       description: "Perfect for showcasing products with clean backgrounds and compelling visuals.",
       prompt:
         "A sleek smartphone displayed on a minimalist white surface with soft lighting, showing a shopping app interface with colorful product cards.",
-      imageUrl: "/placeholder.svg?height=600&width=600&text=E-commerce+Product+Ad",
+      imageUrl: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?q=80&w=600&h=600&auto=format&fit=crop",
       aspectRatio: "1:1",
     },
     {
@@ -20,7 +20,7 @@ export default function ExamplesPage() {
       description: "Ideal for fashion brands looking to create an emotional connection.",
       prompt:
         "A stylish model wearing elegant clothing walking down a Parisian street at sunset, with soft bokeh lights in the background.",
-      imageUrl: "/placeholder.svg?height=750&width=600&text=Fashion+Brand+Ad",
+      imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=600&h=750&auto=format&fit=crop",
       aspectRatio: "4:5",
     },
     {
@@ -29,7 +29,7 @@ export default function ExamplesPage() {
       description: "Designed to capture attention and drive form submissions.",
       prompt:
         "A professional business meeting with diverse team members collaborating around a modern conference table with digital screens showing growth charts.",
-      imageUrl: "/placeholder.svg?height=600&width=600&text=Lead+Generation+Ad",
+      imageUrl: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=600&h=600&auto=format&fit=crop",
       aspectRatio: "1:1",
     },
     {
@@ -38,7 +38,7 @@ export default function ExamplesPage() {
       description: "Showcase your app's features and benefits to drive installs.",
       prompt:
         "A person holding a smartphone with a fitness app open, showing workout statistics and progress charts, with a subtle gym background.",
-      imageUrl: "/placeholder.svg?height=1067&width=600&text=App+Install+Ad",
+      imageUrl: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=600&h=1067&auto=format&fit=crop",
       aspectRatio: "9:16",
     },
     {
@@ -47,7 +47,7 @@ export default function ExamplesPage() {
       description: "Highlight delicious food and ambiance to attract diners.",
       prompt:
         "A beautifully plated gourmet dish with vibrant colors on a rustic wooden table, with soft restaurant lighting and elegant table setting in the background.",
-      imageUrl: "/placeholder.svg?height=600&width=1067&text=Restaurant+Promotion",
+      imageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1067&h=600&auto=format&fit=crop",
       aspectRatio: "16:9",
     },
     {
@@ -56,7 +56,7 @@ export default function ExamplesPage() {
       description: "Inspire wanderlust and travel bookings with stunning visuals.",
       prompt:
         "A breathtaking beach sunset view with palm trees, crystal clear turquoise water, and a small beachfront resort with overwater bungalows in the distance.",
-      imageUrl: "/placeholder.svg?height=600&width=600&text=Travel+Destination+Ad",
+      imageUrl: "https://images.unsplash.com/photo-1573843981267-be1999ff37cd?q=80&w=600&h=600&auto=format&fit=crop",
       aspectRatio: "1:1",
     },
   ]
