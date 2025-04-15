@@ -60,7 +60,7 @@ export default function Home() {
                   required!
                 </p>
               </div>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <div className="mt-16 flex flex-col sm:flex-row gap-4">
                 <Link href="/dashboard">
                   <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base w-full sm:w-auto">
                     Try Now - No Signup <ArrowRight className="ml-2 h-4 w-4" />

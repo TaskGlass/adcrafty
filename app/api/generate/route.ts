@@ -33,14 +33,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const { prompt, aspectRatio, brandAnalysis } = body
+    const { prompt, aspectRatio, brandAnalysis, brandSettings } = body
 
     // Generate image with proper error handling
     try {
       // Use the OpenAI client directly instead of the AI SDK
       const response = await openai.images.generate({
         model: "dall-e-3",
-        prompt: enhancePrompt(prompt, aspectRatio, brandAnalysis),
+        prompt: enhancePrompt(prompt, aspectRatio, brandAnalysis, brandSettings),
         n: 1,
         size: getImageSize(aspectRatio),
       })
@@ -86,7 +86,14 @@ export async function POST(req: Request) {
 }
 
 // Helper function to determine image size based on aspect ratio
-function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x1792" {
+function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x1792" | string {
+  // Check if it's a Google ad size format (e.g., "300x250")
+  if (/^\d+x\d+$/.test(aspectRatio)) {
+    // For Google ad sizes, we'll use the exact dimensions
+    return aspectRatio
+  }
+
+  // For standard aspect ratios
   switch (aspectRatio) {
     case "1:1":
       return "1024x1024"
@@ -102,11 +109,25 @@ function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x17
 }
 
 // Helper function to enhance the prompt for better ad generation
-function enhancePrompt(prompt: string, aspectRatio: string, brandAnalysis?: any) {
+function enhancePrompt(prompt: string, aspectRatio: string, brandAnalysis?: any, brandSettings?: any) {
+  // Check if it's a Google ad size format (e.g., "300x250")
+  const isGoogleAdSize = /^\d+x\d+$/.test(aspectRatio)
+
   let enhancedPrompt = `Create a professional advertising image for digital marketing with the following details: ${prompt}. 
-  The image should be high quality, visually appealing, and suitable for a ${aspectRatio} aspect ratio advertisement.
-  Make it look like a professional advertisement that would appear on social media platforms.
-  Ensure the composition works well for this specific aspect ratio.`
+  The image should be high quality, visually appealing, and suitable for ${isGoogleAdSize ? `a Google display ad with dimensions ${aspectRatio} pixels` : `a ${aspectRatio} aspect ratio advertisement`}.
+  Make it look like a professional advertisement that would appear on ${isGoogleAdSize ? "Google Display Network" : "social media platforms"}.
+  Ensure the composition works well for this specific ${isGoogleAdSize ? "ad size" : "aspect ratio"}.`
+
+  // If brand settings are provided, incorporate them into the prompt
+  if (brandSettings) {
+    enhancedPrompt += `\n\nUse the following brand settings for this ad:
+    ${brandSettings.primaryColor ? `- Primary brand color: ${brandSettings.primaryColor}` : ""}
+    ${brandSettings.secondaryColor ? `- Secondary brand color: ${brandSettings.secondaryColor}` : ""}
+    ${brandSettings.accentColor ? `- Accent color: ${brandSettings.accentColor}` : ""}
+    ${brandSettings.brandTone ? `- Brand tone: ${brandSettings.brandTone}` : ""}
+    ${brandSettings.brandVoice ? `- Brand voice: ${brandSettings.brandVoice}` : ""}
+    `
+  }
 
   // If brand analysis is provided, incorporate it into the prompt
   if (brandAnalysis) {

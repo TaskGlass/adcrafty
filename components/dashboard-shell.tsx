@@ -19,7 +19,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   const userName = user?.user_metadata?.full_name || user?.email || "Guest User"
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between py-4">
           <div className="flex items-center gap-2">
@@ -68,21 +68,12 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           </div>
         </div>
       </header>
-      <div className="flex-1 items-start md:grid md:grid-cols-[240px_1fr]">
-        <aside className="fixed top-[65px] z-30 hidden h-[calc(100vh-65px)] w-full shrink-0 border-r border-border/40 md:sticky md:block">
-          <div className="flex h-full flex-col gap-2 p-4">
-            <DashboardNav />
-          </div>
+      <div className="flex flex-1">
+        <aside className="hidden w-[200px] flex-col border-r bg-secondary/50 px-4 py-6 md:flex">
+          <DashboardNav />
         </aside>
-        <main className="flex w-full flex-col overflow-hidden">
-          <motion.div
-            className="container mx-auto flex-1 space-y-8 p-4 sm:p-6 md:p-8 pt-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {children}
-          </motion.div>
+        <main className="flex flex-1 flex-col">
+          <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">{children}</div>
         </main>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 interface AspectRatioOption {
   id: string
   label: string
+  pixelDimensions?: string
 }
 
 interface AspectRatioSelectorProps {
@@ -24,7 +25,18 @@ export function AspectRatioSelector({ selected, onChange, options }: AspectRatio
     { id: "1.91:1", label: "1.91:1 (Facebook)" },
   ]
 
-  const aspectRatios = options || defaultAspectRatios
+  const googleAdSizes = [
+    { id: "300x250", label: "Medium Rectangle", pixelDimensions: "300×250" },
+    { id: "336x280", label: "Large Rectangle", pixelDimensions: "336×280" },
+    { id: "728x90", label: "Leaderboard", pixelDimensions: "728×90" },
+    { id: "300x600", label: "Half Page", pixelDimensions: "300×600" },
+    { id: "250x250", label: "Square", pixelDimensions: "250×250" },
+    { id: "200x200", label: "Small Square", pixelDimensions: "200×200" },
+    { id: "160x600", label: "Wide Skyscraper", pixelDimensions: "160×600" },
+    { id: "320x100", label: "Large Mobile Banner", pixelDimensions: "320×100" },
+  ]
+
+  const aspectRatios = options || [...defaultAspectRatios, ...googleAdSizes]
 
   const toggleAspectRatio = (id: string) => {
     if (selected.includes(id)) {
@@ -57,6 +69,7 @@ export function AspectRatioSelector({ selected, onChange, options }: AspectRatio
             onClick={() => toggleAspectRatio(ratio.id)}
           >
             {ratio.label}
+            {ratio.pixelDimensions && <span className="ml-1 opacity-80">({ratio.pixelDimensions})</span>}
           </Badge>
         </motion.div>
       ))}

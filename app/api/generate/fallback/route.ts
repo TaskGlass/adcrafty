@@ -10,27 +10,35 @@ export async function POST(req: Request) {
     let width = 800
     let height = 800
 
-    switch (aspectRatio) {
-      case "1:1":
-        width = 800
-        height = 800
-        break
-      case "4:5":
-        width = 800
-        height = 1000
-        break
-      case "9:16":
-        width = 800
-        height = 1422
-        break
-      case "16:9":
-        width = 1422
-        height = 800
-        break
-      case "1.91:1":
-        width = 1528
-        height = 800
-        break
+    // Check if it's a Google ad size format (e.g., "300x250")
+    if (/^\d+x\d+$/.test(aspectRatio)) {
+      const [w, h] = aspectRatio.split("x").map(Number)
+      width = w
+      height = h
+    } else {
+      // For standard aspect ratios
+      switch (aspectRatio) {
+        case "1:1":
+          width = 800
+          height = 800
+          break
+        case "4:5":
+          width = 800
+          height = 1000
+          break
+        case "9:16":
+          width = 800
+          height = 1422
+          break
+        case "16:9":
+          width = 1422
+          height = 800
+          break
+        case "1.91:1":
+          width = 1528
+          height = 800
+          break
+      }
     }
 
     const placeholderUrl = `/placeholder.svg?height=${height}&width=${width}&text=${encodeURIComponent(

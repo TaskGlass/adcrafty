@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import DashboardHeader from "@/components/dashboard-header"
 import DashboardShell from "@/components/dashboard-shell"
@@ -12,23 +14,38 @@ import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/lib/supabase"
 import { toast } from "@/components/ui/use-toast"
-import { Loader2, Check, CreditCard, AlertTriangle } from "lucide-react"
+import { Loader2, Check, CreditCard, AlertTriangle, Upload, Trash2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Textarea } from "@/components/ui/textarea"
+import { ColorPicker } from "@/components/ui/color-picker"
+import { getBrandSettings, saveBrandSettings, uploadLogo, type BrandSettings } from "@/lib/brand-settings-service"
 
 export default function SettingsPage() {
-  const { user, isAnonymous, subscription, updateSubscription } = useAuth()
+  const { user, isAnonymous, subscription, updateSubscription, session } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdatingSubscription, setIsUpdatingSubscription] = useState(false)
+  const [isSavingBrand, setIsSavingBrand] = useState(false)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
+  })
+  const [brandSettings, setBrandSettings] = useState<BrandSettings>({
+    userId: "",
+    logoUrl: "",
+    primaryColor: "#3B82F6", // Default blue
+    secondaryColor: "#1E293B", // Default dark blue/gray
+    accentColor: "#10B981", // Default green
+    brandTone: "",
+    brandVoice: "",
   })
   const [usageCount, setUsageCount] = useState(0)
   const [isTableAvailable, setIsTableAvailable] = useState(true)
@@ -37,43 +54,61 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadUserData() {
       try {
-        // If user is anonymous, don't try to load data
-        if (isAnonymous) {
+        // If user is anonymous or not available yet, don't try to load data
+        if (isAnonymous || !user) {
           setIsLoading(false)
           return
         }
 
-        // If we have a user, load their data
-        if (user) {
-          // Set form data
-          setFormData({
-            firstName: user.user_metadata?.first_name || "",
-            lastName: user.user_metadata?.last_name || "",
-            email: user.email || "",
-          })
+        // Set form data
+        setFormData({
+          firstName: user.user_metadata?.first_name || "",
+          lastName: user.user_metadata?.last_name || "",
+          email: user.email || "",
+        })
 
-          // Fetch usage count
-          try {
-            const { count, error } = await supabase
-              .from("ads")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id)
-
-            if (!error) {
-              setUsageCount(count || 0)
-            }
-          } catch (error) {
-            console.error("Error fetching usage count:", error)
+        // Fetch brand settings
+        try {
+          const settings = await getBrandSettings(user.id)
+          if (settings) {
+            setBrandSettings(settings)
+          } else {
+            // Initialize with default settings
+            setBrandSettings({
+              userId: user.id,
+              logoUrl: "",
+              primaryColor: "#3B82F6", // Default blue
+              secondaryColor: "#1E293B", // Default dark blue/gray
+              accentColor: "#10B981", // Default green
+              brandTone: "",
+              brandVoice: "",
+            })
           }
+        } catch (error) {
+          console.error("Error fetching brand settings:", error)
+        }
 
-          // Check if subscriptions table exists
-          try {
-            const { error } = await supabase.from("subscriptions").select("count").limit(1).single()
-            setIsTableAvailable(!error || error.code !== "42P01")
-          } catch (error) {
-            console.error("Error checking subscriptions table:", error)
-            setIsTableAvailable(false)
+        // Fetch usage count
+        try {
+          const { count, error } = await supabase
+            .from("ads")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id)
+
+          if (!error) {
+            setUsageCount(count || 0)
           }
+        } catch (error) {
+          console.error("Error fetching usage count:", error)
+        }
+
+        // Check if subscriptions table exists
+        try {
+          const { error } = await supabase.from("subscriptions").select("count").limit(1).single()
+          setIsTableAvailable(!error || error.code !== "42P01")
+        } catch (error) {
+          console.error("Error checking subscriptions table:", error)
+          setIsTableAvailable(false)
         }
       } finally {
         setIsLoading(false)
@@ -91,7 +126,85 @@ export default function SettingsPage() {
     }))
   }
 
-  const handleSubmit = async (e) => {
+  const handleBrandChange = (e) => {
+    const { name, value } = e.target
+    setBrandSettings((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleColorChange = (colorName: string, value: string) => {
+    setBrandSettings((prev) => ({
+      ...prev,
+      [colorName]: value,
+    }))
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return
+
+    const file = e.target.files[0]
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/svg+xml"]
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPEG, PNG, or SVG file.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Logo file must be less than 2MB.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUploadingLogo(true)
+
+    try {
+      const logoUrl = await uploadLogo(user.id, file)
+
+      setBrandSettings((prev) => ({
+        ...prev,
+        logoUrl,
+      }))
+
+      toast({
+        title: "Logo uploaded",
+        description: "Your brand logo has been successfully uploaded.",
+      })
+    } catch (error) {
+      console.error("Error uploading logo:", error)
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload logo. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingLogo(false)
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
+  const handleRemoveLogo = () => {
+    setBrandSettings((prev) => ({
+      ...prev,
+      logoUrl: "",
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
@@ -123,6 +236,34 @@ export default function SettingsPage() {
     }
   }
 
+  const handleBrandSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingBrand(true)
+
+    try {
+      if (!user) throw new Error("User not authenticated")
+
+      await saveBrandSettings({
+        ...brandSettings,
+        userId: user.id,
+      })
+
+      toast({
+        title: "Brand settings saved",
+        description: "Your brand settings have been successfully saved.",
+      })
+    } catch (error) {
+      console.error("Error saving brand settings:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save brand settings. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSavingBrand(false)
+    }
+  }
+
   const handleSubscriptionChange = async (plan) => {
     setIsUpdatingSubscription(true)
     try {
@@ -132,26 +273,40 @@ export default function SettingsPage() {
     }
   }
 
-  // If loading, show loading state
+  // Update the loading state to be more user-friendly
   if (isLoading) {
     return (
       <DashboardShell>
         <DashboardHeader heading="Settings" text="Loading your settings..." />
         <div className="flex items-center justify-center h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading your settings...</p>
+          </div>
         </div>
       </DashboardShell>
     )
   }
 
-  // If anonymous, show login prompt
-  if (isAnonymous) {
+  // Make the anonymous user message more helpful
+  if (isAnonymous || !user) {
     return (
       <DashboardShell>
         <DashboardHeader heading="Settings" text="Please log in to access settings" />
         <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
-          <p>You need to be logged in to access your settings.</p>
-          <Button onClick={() => router.push("/login?from=/dashboard/settings")}>Log in</Button>
+          <div className="text-center max-w-md">
+            <h2 className="text-xl font-semibold mb-2">Account Required</h2>
+            <p className="text-muted-foreground mb-4">
+              You need to be logged in to access your settings. Create an account to save your preferences and manage
+              your subscription.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Button onClick={() => router.push("/login?from=/dashboard/settings")}>Log in</Button>
+              <Button variant="outline" onClick={() => router.push("/signup?from=/dashboard/settings")}>
+                Sign up
+              </Button>
+            </div>
+          </div>
         </div>
       </DashboardShell>
     )
@@ -161,9 +316,13 @@ export default function SettingsPage() {
     <DashboardShell>
       <DashboardHeader heading="Settings" text="Manage your account preferences and settings" />
 
-      <Tabs defaultValue={tabParam === "subscription" ? "subscription" : "profile"} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
+      <Tabs
+        defaultValue={tabParam === "subscription" ? "subscription" : tabParam === "brand" ? "brand" : "profile"}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
         </TabsList>
 
@@ -216,6 +375,187 @@ export default function SettingsPage() {
                     </>
                   ) : (
                     "Save Changes"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="brand" className="space-y-8">
+          <Card className="bg-secondary border border-border/40">
+            <CardHeader>
+              <CardTitle>Brand Settings</CardTitle>
+              <CardDescription>Customize your brand identity for consistent ad generation</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <form onSubmit={handleBrandSubmit}>
+                {/* Logo Upload Section */}
+                <div className="space-y-4">
+                  <Label>Brand Logo</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-24 border border-border/40 rounded-md bg-background flex items-center justify-center overflow-hidden">
+                      {brandSettings.logoUrl ? (
+                        <img
+                          src={brandSettings.logoUrl || "/placeholder.svg"}
+                          alt="Brand Logo"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="text-muted-foreground text-xs text-center p-2">No logo uploaded</div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingLogo}
+                        >
+                          {isUploadingLogo ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="mr-2 h-4 w-4" /> Upload Logo
+                            </>
+                          )}
+                        </Button>
+                        {brandSettings.logoUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRemoveLogo}
+                            disabled={isUploadingLogo}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Remove
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Upload a PNG, JPG, or SVG file (max 2MB)</p>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png, image/jpeg, image/svg+xml"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                    />
+                  </div>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Brand Colors Section */}
+                <div className="space-y-4">
+                  <Label>Brand Colors</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="primaryColor" className="text-sm">
+                        Primary Color
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <ColorPicker
+                          color={brandSettings.primaryColor || "#3B82F6"}
+                          onChange={(color) => handleColorChange("primaryColor", color)}
+                        />
+                        <Input
+                          id="primaryColor"
+                          value={brandSettings.primaryColor || ""}
+                          onChange={(e) => handleColorChange("primaryColor", e.target.value)}
+                          className="bg-background font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="secondaryColor" className="text-sm">
+                        Secondary Color
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <ColorPicker
+                          color={brandSettings.secondaryColor || "#1E293B"}
+                          onChange={(color) => handleColorChange("secondaryColor", color)}
+                        />
+                        <Input
+                          id="secondaryColor"
+                          value={brandSettings.secondaryColor || ""}
+                          onChange={(e) => handleColorChange("secondaryColor", e.target.value)}
+                          className="bg-background font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="accentColor" className="text-sm">
+                        Accent Color
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <ColorPicker
+                          color={brandSettings.accentColor || "#10B981"}
+                          onChange={(color) => handleColorChange("accentColor", color)}
+                        />
+                        <Input
+                          id="accentColor"
+                          value={brandSettings.accentColor || ""}
+                          onChange={(e) => handleColorChange("accentColor", e.target.value)}
+                          className="bg-background font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    These colors will be used to guide the AI when generating your ads
+                  </p>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Brand Voice Section */}
+                <div className="space-y-4">
+                  <Label>Brand Voice & Tone</Label>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="brandTone" className="text-sm">
+                        Brand Tone
+                      </Label>
+                      <Input
+                        id="brandTone"
+                        name="brandTone"
+                        placeholder="e.g., Professional, Friendly, Casual, Authoritative"
+                        className="bg-background"
+                        value={brandSettings.brandTone || ""}
+                        onChange={handleBrandChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brandVoice" className="text-sm">
+                        Brand Voice Description
+                      </Label>
+                      <Textarea
+                        id="brandVoice"
+                        name="brandVoice"
+                        placeholder="Describe your brand's voice and personality in detail..."
+                        className="bg-background min-h-[100px]"
+                        value={brandSettings.brandVoice || ""}
+                        onChange={handleBrandChange}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Your brand voice and tone will help the AI generate ad copy that matches your brand's personality
+                  </p>
+                </div>
+
+                <Button className="bg-primary hover:bg-primary/90 mt-6" type="submit" disabled={isSavingBrand}>
+                  {isSavingBrand ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    "Save Brand Settings"
                   )}
                 </Button>
               </form>

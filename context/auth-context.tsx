@@ -5,7 +5,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import type { Session, User, AuthError } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 
 type AuthContextType = {
@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isActive: true,
   })
   const router = useRouter()
+  const pathname = usePathname()
 
   // Function to fetch user subscription
   const fetchSubscription = async (userId: string) => {
@@ -179,8 +180,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase.auth.getSession()
 
         if (error) {
+          console.error("Error getting session:", error.message)
           throw error
         }
+
+        // Log the session state for debugging
+        console.log("Auth Context - Session Check:", {
+          hasSession: !!data.session,
+          path: pathname,
+        })
 
         if (data.session) {
           setSession(data.session)
@@ -207,6 +215,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state change:", event, !!session)
+
       if (session) {
         setSession(session)
         setUser(session.user)
@@ -229,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [])
+  }, [pathname])
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {

@@ -153,43 +153,37 @@ export default function FeaturesPage() {
             </div>
 
             <div className="grid gap-8 md:grid-cols-3">
-              <div className="relative">
-                <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+              <div className="bg-secondary p-8 rounded-lg border border-border/40 h-full flex flex-col relative">
+                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm mb-4">
                   1
                 </div>
-                <div className="bg-secondary p-8 rounded-lg border border-border/40 ml-4">
-                  <h3 className="text-xl font-bold mb-3">Describe Your Ad</h3>
-                  <p className="text-muted-foreground">
-                    Enter a detailed description of the ad you want to create. Include information about your product,
-                    target audience, and desired style.
-                  </p>
-                </div>
+                <h3 className="text-xl font-bold mb-3">Describe Your Ad</h3>
+                <p className="text-muted-foreground flex-grow">
+                  Enter a detailed description of the ad you want to create. Include information about your product,
+                  target audience, and desired style.
+                </p>
               </div>
 
-              <div className="relative">
-                <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+              <div className="bg-secondary p-8 rounded-lg border border-border/40 h-full flex flex-col relative">
+                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm mb-4">
                   2
                 </div>
-                <div className="bg-secondary p-8 rounded-lg border border-border/40 ml-4">
-                  <h3 className="text-xl font-bold mb-3">Select Formats</h3>
-                  <p className="text-muted-foreground">
-                    Choose the aspect ratios and platforms for your ad. Generate multiple formats simultaneously to save
-                    time.
-                  </p>
-                </div>
+                <h3 className="text-xl font-bold mb-3">Select Formats</h3>
+                <p className="text-muted-foreground flex-grow">
+                  Choose the aspect ratios and platforms for your ad. Generate multiple formats simultaneously to save
+                  time.
+                </p>
               </div>
 
-              <div className="relative">
-                <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+              <div className="bg-secondary p-8 rounded-lg border border-border/40 h-full flex flex-col relative">
+                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm mb-4">
                   3
                 </div>
-                <div className="bg-secondary p-8 rounded-lg border border-border/40 ml-4">
-                  <h3 className="text-xl font-bold mb-3">Generate & Download</h3>
-                  <p className="text-muted-foreground">
-                    Our AI generates your ads in seconds. Review, download, and use them directly in your marketing
-                    campaigns.
-                  </p>
-                </div>
+                <h3 className="text-xl font-bold mb-3">Generate & Download</h3>
+                <p className="text-muted-foreground flex-grow">
+                  Our AI generates your ads in seconds. Review, download, and use them directly in your marketing
+                  campaigns.
+                </p>
               </div>
             </div>
           </div>

@@ -25,6 +25,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { supabase } from "@/lib/supabase"
+import { getBrandSettings } from "@/lib/brand-settings-service"
+import type { BrandSettings } from "@/lib/brand-settings-service"
 
 const supabaseClient = createClientComponentClient()
 
@@ -44,12 +46,14 @@ export default function AdCreator() {
   const [squareFormatUsage, setSquareFormatUsage] = useState(0)
   const [showPromptTips, setShowPromptTips] = useState(false)
   const [brandAnalysis, setBrandAnalysis] = useState<any>(null)
+  const [brandSettings, setBrandSettings] = useState<BrandSettings | null>(null)
+  const [isFetchingBrandSettings, setIsFetchingBrandSettings] = useState(false)
   const maxFreeUsage = 5
   const maxSquareFormatUsage = 3
 
   // Fetch usage count based on user status
   useEffect(() => {
-    async function fetchUsageCount() {
+    async function fetchData() {
       if (isAnonymous) {
         // For anonymous users, get count from localStorage
         const anonymousAds = getAnonymousAds()
@@ -74,9 +78,25 @@ export default function AdCreator() {
           console.error("Error fetching usage count:", error)
         }
       }
+
+      // Add this code to fetch brand settings
+      if (!isAnonymous && user?.id) {
+        try {
+          setIsFetchingBrandSettings(true)
+          const settings = await getBrandSettings(user.id)
+          if (settings) {
+            setBrandSettings(settings)
+          }
+        } catch (error) {
+          console.error("Error fetching brand settings:", error)
+          // Don't show an error toast here, just log it
+        } finally {
+          setIsFetchingBrandSettings(false)
+        }
+      }
     }
 
-    fetchUsageCount()
+    fetchData()
   }, [user, isAnonymous])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +177,7 @@ export default function AdCreator() {
           prompt,
           aspectRatio,
           brandAnalysis, // Include brand analysis if available
+          brandSettings, // Include brand settings if available
         }),
       })
 
@@ -379,6 +400,15 @@ export default function AdCreator() {
         { id: "9:16", label: "9:16 (Story)" },
         { id: "16:9", label: "16:9 (Landscape)" },
         { id: "1.91:1", label: "1.91:1 (Facebook)" },
+        // Google Display Ad Sizes
+        { id: "300x250", label: "Medium Rectangle (300×250)" },
+        { id: "336x280", label: "Large Rectangle (336×280)" },
+        { id: "728x90", label: "Leaderboard (728×90)" },
+        { id: "300x600", label: "Half Page (300×600)" },
+        { id: "250x250", label: "Square (250×250)" },
+        { id: "200x200", label: "Small Square (200×200)" },
+        { id: "160x600", label: "Wide Skyscraper (160×600)" },
+        { id: "320x100", label: "Large Mobile Banner (320×100)" },
       ]
     }
 
@@ -392,6 +422,9 @@ export default function AdCreator() {
       { id: "1:1", label: "1:1 (Square) - 3 free" },
       { id: "4:5", label: "4:5 (Portrait)" },
       { id: "16:9", label: "16:9 (Landscape)" },
+      // Add a couple of Google ad sizes for free users
+      { id: "300x250", label: "Medium Rectangle (300×250)" },
+      { id: "728x90", label: "Leaderboard (728×90)" },
     ]
   }
 
@@ -508,6 +541,57 @@ export default function AdCreator() {
                           <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             Description: {brandAnalysis.description}
                           </span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Brand settings preview */}
+              <AnimatePresence>
+                {brandSettings && brandSettings.primaryColor && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Alert className="bg-primary/10 border-primary/20">
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                      <AlertDescription className="flex flex-col gap-1">
+                        <span className="font-medium">Brand settings applied!</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {brandSettings.primaryColor && (
+                            <div className="flex items-center gap-1.5">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: brandSettings.primaryColor }}
+                              ></div>
+                              <span className="text-xs">Primary</span>
+                            </div>
+                          )}
+                          {brandSettings.secondaryColor && (
+                            <div className="flex items-center gap-1.5">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: brandSettings.secondaryColor }}
+                              ></div>
+                              <span className="text-xs">Secondary</span>
+                            </div>
+                          )}
+                          {brandSettings.accentColor && (
+                            <div className="flex items-center gap-1.5">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: brandSettings.accentColor }}
+                              ></div>
+                              <span className="text-xs">Accent</span>
+                            </div>
+                          )}
+                        </div>
+                        {brandSettings.brandTone && (
+                          <span className="text-xs text-muted-foreground mt-1">Tone: {brandSettings.brandTone}</span>
                         )}
                       </AlertDescription>
                     </Alert>

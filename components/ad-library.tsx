@@ -290,6 +290,13 @@ export default function AdLibrary() {
 
 // Helper function to convert aspect ratio string to numeric value for the AspectRatio component
 function getAspectRatioValue(aspectRatio: string): number {
+  // Check if it's a Google ad size format (e.g., "300x250")
+  if (/^\d+x\d+$/.test(aspectRatio)) {
+    const [width, height] = aspectRatio.split("x").map(Number)
+    return width / height
+  }
+
+  // For standard aspect ratios
   switch (aspectRatio) {
     case "1:1":
       return 1
