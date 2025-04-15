@@ -1,0 +1,329 @@
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { ArrowRight, Wand2, LayoutGrid, Palette, ImageIcon, Clock, Users, Zap } from "lucide-react"
+
+export default function FeaturesPage() {
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <header className="border-b border-border/40 py-4">
+        <div className="container flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <span className="text-primary text-2xl">AdCreator</span>
+          </Link>
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Features
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
+              href="/examples"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Examples
+            </Link>
+          </nav>
+          <div className="flex items-center gap-4">
+            <Link href="/login">
+              <Button variant="ghost" size="sm" className="hidden md:flex">
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button size="sm" className="bg-primary hover:bg-primary/90">
+                Start Free Trial
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative py-20 md:py-28 overflow-hidden hero-gradient">
+          <div className="container px-4 md:px-6 relative z-10">
+            <div className="flex flex-col items-center space-y-4 text-center max-w-4xl mx-auto">
+              <div className="space-y-2">
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl gradient-text">
+                  Powerful Features for <br />
+                  Professional Ad Creation
+                </h1>
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-6">
+                  Everything you need to create stunning ads for your marketing campaigns
+                </p>
+              </div>
+              <div className="mt-8">
+                <Link href="/signup">
+                  <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base">
+                    Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Features */}
+        <section className="py-20 bg-secondary">
+          <div className="container px-4 md:px-6">
+            <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <Wand2 className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">AI-Powered Generation</h3>
+                <p className="text-muted-foreground">
+                  Create professional ads with just a text prompt. Our AI understands your requirements and generates
+                  high-quality visuals that match your brand.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <LayoutGrid className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Multiple Aspect Ratios</h3>
+                <p className="text-muted-foreground">
+                  Generate ads in all standard sizes for Meta and Google platforms. Create once and adapt to all
+                  required formats automatically.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <Palette className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Brand Consistency</h3>
+                <p className="text-muted-foreground">
+                  Maintain your brand identity across all ads. Our AI ensures consistent colors, styles, and messaging
+                  that align with your brand guidelines.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <ImageIcon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Image Upload</h3>
+                <p className="text-muted-foreground">
+                  Combine your existing images with AI-generated elements. Upload product photos or brand assets to
+                  incorporate into your ad designs.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <Clock className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Time-Saving</h3>
+                <p className="text-muted-foreground">
+                  Create multiple ad variations in minutes, not hours. Reduce your design time by 90% while maintaining
+                  professional quality.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Team Collaboration</h3>
+                <p className="text-muted-foreground">
+                  Share and collaborate on ad creations with your team. Streamline approval processes and maintain a
+                  central library of assets.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section className="py-20 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text">
+                How AdCreator Works
+              </h2>
+              <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
+                Create professional ads in three simple steps
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-3">
+              <div className="relative">
+                <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                  1
+                </div>
+                <div className="bg-secondary p-8 rounded-lg border border-border/40 ml-4">
+                  <h3 className="text-xl font-bold mb-3">Describe Your Ad</h3>
+                  <p className="text-muted-foreground">
+                    Enter a detailed description of the ad you want to create. Include information about your product,
+                    target audience, and desired style.
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                  2
+                </div>
+                <div className="bg-secondary p-8 rounded-lg border border-border/40 ml-4">
+                  <h3 className="text-xl font-bold mb-3">Select Formats</h3>
+                  <p className="text-muted-foreground">
+                    Choose the aspect ratios and platforms for your ad. Generate multiple formats simultaneously to save
+                    time.
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                  3
+                </div>
+                <div className="bg-secondary p-8 rounded-lg border border-border/40 ml-4">
+                  <h3 className="text-xl font-bold mb-3">Generate & Download</h3>
+                  <p className="text-muted-foreground">
+                    Our AI generates your ads in seconds. Review, download, and use them directly in your marketing
+                    campaigns.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Advanced Features */}
+        <section className="py-20 bg-secondary">
+          <div className="container px-4 md:px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text">
+                Advanced Features
+              </h2>
+              <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
+                Unlock more capabilities with our Pro and Business plans
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2">
+              <div className="bg-background p-8 rounded-lg border border-border/40">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Zap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">Unlimited Generations</h3>
+                    <p className="text-muted-foreground">
+                      Create as many ads as you need without limitations. Perfect for agencies and marketing teams with
+                      high-volume requirements.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-background p-8 rounded-lg border border-border/40">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Zap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">Custom Branding</h3>
+                    <p className="text-muted-foreground">
+                      Upload your brand assets, colors, and fonts to ensure all generated ads match your brand identity
+                      perfectly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-background p-8 rounded-lg border border-border/40">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Zap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">Batch Processing</h3>
+                    <p className="text-muted-foreground">
+                      Generate multiple ad variations at once. Create different messaging and visuals for A/B testing
+                      your campaigns.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-background p-8 rounded-lg border border-border/40">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Zap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">Advanced Analytics</h3>
+                    <p className="text-muted-foreground">
+                      Track which ads perform best and gain insights into your creative process. Optimize your ad
+                      creation strategy over time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <Link href="/pricing">
+                <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base">
+                  View Pricing Plans <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="bg-secondary p-8 md:p-12 rounded-lg border border-border/40 text-center">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl gradient-text mb-4">
+                Ready to Transform Your Ad Creation?
+              </h2>
+              <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto mb-8">
+                Join thousands of marketers who are saving time and creating better ads with AdCreator AI.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/signup">
+                  <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base w-full sm:w-auto">
+                    Start Free Trial
+                  </Button>
+                </Link>
+                <Link href="/examples">
+                  <Button variant="outline" className="px-8 py-6 rounded-md text-base w-full sm:w-auto">
+                    View Examples
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border/40 py-8">
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 font-bold">
+            <span className="text-primary">AdCreator</span>
+            <span className="text-xs text-muted-foreground">
+              &copy; {new Date().getFullYear()} All rights reserved.
+            </span>
+          </div>
+          <div className="flex gap-6">
+            <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Terms
+            </Link>
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}
