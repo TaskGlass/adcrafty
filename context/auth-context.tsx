@@ -32,8 +32,9 @@ type AuthContextType = {
   subscription: {
     status: "free" | "pro" | "business" | null
     isActive: boolean
+    billingCycle: "monthly" | "yearly"
   }
-  updateSubscription: (status: "free" | "pro" | "business") => Promise<void>
+  updateSubscription: (status: "free" | "pro" | "business", billingCycle?: "monthly" | "yearly") => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -46,9 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<{
     status: "free" | "pro" | "business" | null
     isActive: boolean
+    billingCycle: "monthly" | "yearly"
   }>({
     status: "free",
     isActive: true,
+    billingCycle: "monthly",
   })
   const router = useRouter()
   const pathname = usePathname()
@@ -83,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSubscription({
           status: data.plan as "free" | "pro" | "business",
           isActive: data.is_active,
+          billingCycle: data.billing_cycle || "monthly",
         })
       }
     } catch (error) {
@@ -91,7 +95,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Function to update user subscription
-  const updateSubscription = async (status: "free" | "pro" | "business") => {
+  const updateSubscription = async (
+    status: "free" | "pro" | "business",
+    billingCycle: "monthly" | "yearly" = "monthly",
+  ) => {
     if (!user) {
       toast({
         title: "Error",
@@ -134,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from("subscriptions")
           .update({
             plan: status,
+            billing_cycle: billingCycle,
             is_active: true,
             updated_at: new Date().toISOString(),
           })
@@ -143,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         result = await supabase.from("subscriptions").insert({
           user_id: user.id,
           plan: status,
+          billing_cycle: billingCycle,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -157,11 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSubscription({
         status,
         isActive: true,
+        billingCycle,
       })
 
       toast({
         title: "Subscription updated",
-        description: `Your subscription has been updated to ${status.toUpperCase()}`,
+        description: `Your subscription has been updated to ${status.toUpperCase()} with ${billingCycle} billing.`,
       })
     } catch (error: any) {
       console.error("Error updating subscription:", error)
@@ -231,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSubscription({
           status: "free",
           isActive: true,
+          billingCycle: "monthly",
         })
       }
     })

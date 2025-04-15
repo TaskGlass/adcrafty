@@ -53,7 +53,7 @@ export default function LoginPage() {
       <header className="border-b border-border/40 py-4">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <span className="text-primary text-2xl">AdCreator</span>
+            <span className="text-primary text-2xl">AdCreatify</span>
           </Link>
         </div>
       </header>

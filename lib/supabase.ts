@@ -16,6 +16,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    storageKey: "adcreator_auth_token",
+    storageKey: "adcreatify_auth_token",
   },
 })

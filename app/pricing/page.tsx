@@ -1,8 +1,38 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Check, X } from "lucide-react"
+import { useState } from "react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function PricingPage() {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
+
+  // Calculate prices
+  const prices = {
+    pro: {
+      monthly: 19,
+      yearly: 19 * 12 * 0.8, // 20% off
+    },
+    business: {
+      monthly: 49,
+      yearly: 49 * 12 * 0.8, // 20% off
+    },
+  }
+
+  // Calculate savings
+  const savings = {
+    pro: {
+      percentage: 20,
+      amount: prices.pro.monthly * 12 - prices.pro.yearly,
+    },
+    business: {
+      percentage: 20,
+      amount: prices.business.monthly * 12 - prices.business.yearly,
+    },
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="border-b border-border/40 py-4">
@@ -43,16 +73,16 @@ export default function PricingPage() {
       </header>
 
       <main className="flex-1">
-        {/* Hero Section */}
+        {/* Hero Section - Fixed to ensure text is fully visible */}
         <section className="relative py-20 md:py-28 overflow-hidden hero-gradient">
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-4 text-center max-w-4xl mx-auto">
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl gradient-text pb-2">
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl gradient-text">
                   Simple, Transparent Pricing
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-6">
-                  Choose the plan that's right for you. Start with 3 free generations, upgrade when you're ready.
+                  Start with 3 free generations. Upgrade when you're ready.
                 </p>
               </div>
             </div>
@@ -62,6 +92,25 @@ export default function PricingPage() {
         {/* Pricing Tables */}
         <section className="py-20 bg-background">
           <div className="container px-4 md:px-6">
+            {/* Billing cycle toggle */}
+            <div className="flex justify-center mb-12">
+              <Tabs
+                defaultValue="monthly"
+                className="w-full max-w-md"
+                onValueChange={(value) => setBillingCycle(value as "monthly" | "yearly")}
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="monthly">Monthly Billing</TabsTrigger>
+                  <TabsTrigger value="yearly">
+                    Yearly Billing
+                    <span className="ml-2 bg-green-500/20 text-green-500 text-xs px-2 py-0.5 rounded-full">
+                      Save 20%
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
             <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
               {/* Free Plan */}
               <div className="flex flex-col p-8 bg-secondary rounded-lg border border-border/40 h-full">
@@ -80,7 +129,7 @@ export default function PricingPage() {
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Basic aspect ratios (1:1, 4:5, 16:9)</span>
+                      <span>Basic aspect ratios (1:1, 9:16)</span>
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
@@ -102,6 +151,18 @@ export default function PricingPage() {
                       <X className="h-5 w-5 text-muted-foreground mr-2 mt-0.5 shrink-0" />
                       <span className="text-muted-foreground">Advanced customization</span>
                     </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>1 video ad per month</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Basic video formats (16:9 only)</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>15-second maximum duration</span>
+                    </li>
                   </ul>
                 </div>
                 <div className="mt-8 pt-8 border-t border-border/40">
@@ -120,8 +181,18 @@ export default function PricingPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold">Pro</h3>
-                  <div className="mt-4 text-4xl font-bold">$19</div>
-                  <p className="text-muted-foreground mt-2">Per month</p>
+                  <div className="mt-4 text-4xl font-bold">
+                    ${billingCycle === "monthly" ? prices.pro.monthly : Math.round(prices.pro.yearly / 12)}
+                    <span className="text-base font-normal text-muted-foreground">
+                      /{billingCycle === "monthly" ? "month" : "month, billed annually"}
+                    </span>
+                  </div>
+                  {billingCycle === "yearly" && (
+                    <div className="mt-2 text-sm text-green-500 flex items-center">
+                      <Check className="h-4 w-4 mr-1" />
+                      Save ${Math.round(savings.pro.amount)} per year ({savings.pro.percentage}% off)
+                    </div>
+                  )}
                   <ul className="mt-8 space-y-4">
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
@@ -155,11 +226,23 @@ export default function PricingPage() {
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
                       <span>Advanced customization options</span>
                     </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Unlimited video ads</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>All video formats and aspect ratios</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Up to 60-second video duration</span>
+                    </li>
                   </ul>
                 </div>
                 <div className="mt-8 pt-8 border-t border-border/40">
                   <Link href="/signup">
-                    <Button className="w-full bg-primary hover:bg-primary/90">Upgrade Now</Button>
+                    <Button className="w-full bg-primary hover:bg-primary/90">Get Started</Button>
                   </Link>
                 </div>
               </div>
@@ -168,8 +251,18 @@ export default function PricingPage() {
               <div className="flex flex-col p-8 bg-secondary rounded-lg border border-border/40 h-full">
                 <div className="flex-1">
                   <h3 className="text-xl font-bold">Business</h3>
-                  <div className="mt-4 text-4xl font-bold">$49</div>
-                  <p className="text-muted-foreground mt-2">Per month</p>
+                  <div className="mt-4 text-4xl font-bold">
+                    ${billingCycle === "monthly" ? prices.business.monthly : Math.round(prices.business.yearly / 12)}
+                    <span className="text-base font-normal text-muted-foreground">
+                      /{billingCycle === "monthly" ? "month" : "month, billed annually"}
+                    </span>
+                  </div>
+                  {billingCycle === "yearly" && (
+                    <div className="mt-2 text-sm text-green-500 flex items-center">
+                      <Check className="h-4 w-4 mr-1" />
+                      Save ${Math.round(savings.business.amount)} per year ({savings.business.percentage}% off)
+                    </div>
+                  )}
                   <ul className="mt-8 space-y-4">
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
@@ -207,12 +300,28 @@ export default function PricingPage() {
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
                       <span>Unlimited downloads</span>
                     </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Unlimited video ads</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>All video formats and aspect ratios</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Up to 3-minute video duration</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Advanced video editing features</span>
+                    </li>
                   </ul>
                 </div>
                 <div className="mt-8 pt-8 border-t border-border/40">
                   <Link href="/signup">
                     <Button variant="outline" className="w-full">
-                      Contact Sales
+                      Get Started
                     </Button>
                   </Link>
                 </div>
@@ -256,7 +365,7 @@ export default function PricingPage() {
                   </tr>
                   <tr className="border-b border-border/40">
                     <td className="py-4 px-6 text-left">Aspect Ratios</td>
-                    <td className="py-4 px-6 text-center">Basic (3)</td>
+                    <td className="py-4 px-6 text-center">Basic (1:1, 9:16)</td>
                     <td className="py-4 px-6 text-center">All</td>
                     <td className="py-4 px-6 text-center">All + Custom</td>
                   </tr>
@@ -308,6 +417,12 @@ export default function PricingPage() {
                       <Check className="h-5 w-5 text-primary mx-auto" />
                     </td>
                   </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-4 px-6 text-left">Video Ads</td>
+                    <td className="py-4 px-6 text-center">1 per month, Basic formats, 15s</td>
+                    <td className="py-4 px-6 text-center">Unlimited, All formats, 60s</td>
+                    <td className="py-4 px-6 text-center">Unlimited, All formats, 3min, Advanced editing</td>
+                  </tr>
                   <tr>
                     <td className="py-4 px-6 text-left">Support</td>
                     <td className="py-4 px-6 text-center">Email</td>
@@ -358,10 +473,11 @@ export default function PricingPage() {
               </div>
 
               <div className="bg-secondary p-6 rounded-lg border border-border/40">
-                <h3 className="text-lg font-bold mb-3">Do you offer custom enterprise plans?</h3>
+                <h3 className="text-lg font-bold mb-3">Can I switch between monthly and yearly billing?</h3>
                 <p className="text-muted-foreground">
-                  Yes, for larger teams or specific requirements, we offer custom enterprise plans. Contact our sales
-                  team to discuss your needs.
+                  Yes, you can switch between monthly and yearly billing at any time. When switching to yearly, you'll
+                  immediately get the 20% discount. When switching to monthly, the change will take effect at the end of
+                  your current billing cycle.
                 </p>
               </div>
 
@@ -397,7 +513,7 @@ export default function PricingPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/signup">
                   <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base w-full sm:w-auto">
-                    Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
+                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/features">

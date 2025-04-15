@@ -31,7 +31,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                AdCreator
+                AdCreatify
               </motion.span>
             </Link>
           </div>

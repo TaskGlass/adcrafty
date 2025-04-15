@@ -1,6 +1,6 @@
 import { supabase } from "./supabase"
 
-export type Ad = {
+export interface Ad {
   id?: string
   title: string
   prompt: string
@@ -8,18 +8,27 @@ export type Ad = {
   aspectRatio: string
   userId: string
   createdAt?: string
+  type?: "image" | "video"
+  adCopy?: any
 }
 
-export async function createAd(ad: Ad) {
+export async function createAd(ad: Ad): Promise<Ad> {
+  // Set default type to 'image' if not provided
+  const adWithType = {
+    ...ad,
+    type: ad.type || "image",
+  }
   const { data, error } = await supabase
     .from("ads")
     .insert([
       {
-        title: ad.title || "Untitled Ad",
-        prompt: ad.prompt,
-        image_url: ad.imageUrl,
-        aspect_ratio: ad.aspectRatio,
-        user_id: ad.userId,
+        title: adWithType.title || "Untitled Ad",
+        prompt: adWithType.prompt,
+        image_url: adWithType.imageUrl,
+        aspect_ratio: adWithType.aspectRatio,
+        user_id: adWithType.userId,
+        type: adWithType.type || "image",
+        ad_copy: adWithType.adCopy || null,
       },
     ])
     .select()
@@ -28,7 +37,7 @@ export async function createAd(ad: Ad) {
     throw error
   }
 
-  return data[0]
+  return data[0] as Ad
 }
 
 export async function getUserAds(userId: string) {
@@ -49,6 +58,8 @@ export async function getUserAds(userId: string) {
     imageUrl: ad.image_url,
     aspectRatio: ad.aspect_ratio,
     createdAt: ad.created_at,
+    type: ad.type || "image",
+    adCopy: ad.ad_copy || null,
   }))
 }
 
@@ -85,4 +96,37 @@ export async function getUserUsageCountByAspectRatio(userId: string, aspectRatio
   }
 
   return count || 0
+}
+
+// Add a function to get ads by type
+export async function getUserAdsByType(userId: string, type: "image" | "video") {
+  const { data, error } = await supabase
+    .from("ads")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("type", type)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return data.map((ad) => ({
+    id: ad.id,
+    title: ad.title,
+    prompt: ad.prompt,
+    imageUrl: ad.image_url,
+    aspectRatio: ad.aspect_ratio,
+    createdAt: ad.created_at,
+    type: ad.type,
+    adCopy: ad.ad_copy || null,
+  }))
+}
+
+// Add a function to get ads by type
+export async function getAdsByType(userId: string, type: "image" | "video"): Promise<Ad[]> {
+  // Implementation would depend on your database structure
+  // For now, we'll filter the ads after fetching them all
+  const ads = await getUserAds(userId)
+  return ads.filter((ad) => ad.type === type || (!ad.type && type === "image"))
 }

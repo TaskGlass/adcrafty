@@ -68,7 +68,7 @@ export default function Home() {
                 </Link>
                 <Link href="/signup">
                   <Button variant="outline" className="px-8 py-6 rounded-md text-base w-full sm:w-auto">
-                    Create Account
+                    Get Started
                   </Button>
                 </Link>
               </div>
@@ -231,7 +231,7 @@ export default function Home() {
                 </div>
                 <div className="mt-8">
                   <Link href="/signup">
-                    <Button className="w-full bg-primary hover:bg-primary/90">Upgrade Now</Button>
+                    <Button className="w-full bg-primary hover:bg-primary/90">Get Started</Button>
                   </Link>
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function Home() {
                 <div className="mt-8">
                   <Link href="/signup">
                     <Button variant="outline" className="w-full">
-                      Contact Sales
+                      Get Started
                     </Button>
                   </Link>
                 </div>

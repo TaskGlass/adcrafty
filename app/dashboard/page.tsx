@@ -1,19 +1,13 @@
-import type { Metadata } from "next"
 import DashboardHeader from "@/components/dashboard-header"
 import DashboardShell from "@/components/dashboard-shell"
-import AdCreator from "@/components/ad-creator"
-
-export const metadata: Metadata = {
-  title: "Dashboard - AdCreatify",
-  description: "Create and manage your AI-generated ads",
-}
+import { AdTypeSelector } from "@/components/ad-type-selector"
 
 export default function DashboardPage() {
   return (
     <DashboardShell>
-      <DashboardHeader heading="Create New Ad" text="Generate professional static image ads with AI" />
+      <DashboardHeader heading="Create New Ad" text="Generate professional ads with AI" />
       <div className="grid gap-8">
-        <AdCreator />
+        <AdTypeSelector />
       </div>
     </DashboardShell>
   )

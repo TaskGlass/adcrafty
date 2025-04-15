@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Textarea } from "@/components/ui/textarea"
 import { ColorPicker } from "@/components/ui/color-picker"
 import { getBrandSettings, saveBrandSettings, uploadLogo, type BrandSettings } from "@/lib/brand-settings-service"
+import { PasswordReset } from "@/components/auth/password-reset"
 
 export default function SettingsPage() {
   const { user, isAnonymous, subscription, updateSubscription, session } = useAuth()
@@ -37,6 +38,9 @@ export default function SettingsPage() {
     firstName: "",
     lastName: "",
     email: "",
+    companyName: "",
+    website: "",
+    jobTitle: "",
   })
   const [brandSettings, setBrandSettings] = useState<BrandSettings>({
     userId: "",
@@ -49,6 +53,30 @@ export default function SettingsPage() {
   })
   const [usageCount, setUsageCount] = useState(0)
   const [isTableAvailable, setIsTableAvailable] = useState(true)
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
+
+  // Calculate prices and savings
+  const prices = {
+    pro: {
+      monthly: 19,
+      yearly: 19 * 12 * 0.8, // 20% off
+    },
+    business: {
+      monthly: 49,
+      yearly: 49 * 12 * 0.8, // 20% off
+    },
+  }
+
+  const savings = {
+    pro: {
+      percentage: 20,
+      amount: prices.pro.monthly * 12 - prices.pro.yearly,
+    },
+    business: {
+      percentage: 20,
+      amount: prices.business.monthly * 12 - prices.business.yearly,
+    },
+  }
 
   // Load user data when component mounts
   useEffect(() => {
@@ -65,6 +93,9 @@ export default function SettingsPage() {
           firstName: user.user_metadata?.first_name || "",
           lastName: user.user_metadata?.last_name || "",
           email: user.email || "",
+          companyName: user.user_metadata?.company_name || "",
+          website: user.user_metadata?.website || "",
+          jobTitle: user.user_metadata?.job_title || "",
         })
 
         // Fetch brand settings
@@ -109,6 +140,21 @@ export default function SettingsPage() {
         } catch (error) {
           console.error("Error checking subscriptions table:", error)
           setIsTableAvailable(false)
+        }
+
+        // Check current billing cycle if subscription exists
+        try {
+          const { data, error } = await supabase
+            .from("subscriptions")
+            .select("billing_cycle")
+            .eq("user_id", user.id)
+            .single()
+
+          if (!error && data && data.billing_cycle) {
+            setBillingCycle(data.billing_cycle)
+          }
+        } catch (error) {
+          console.error("Error fetching billing cycle:", error)
         }
       } finally {
         setIsLoading(false)
@@ -214,6 +260,9 @@ export default function SettingsPage() {
           first_name: formData.firstName,
           last_name: formData.lastName,
           full_name: `${formData.firstName} ${formData.lastName}`,
+          company_name: formData.companyName,
+          website: formData.website,
+          job_title: formData.jobTitle,
         },
       })
 
@@ -264,10 +313,37 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSubscriptionChange = async (plan) => {
+  const handleSubscriptionChange = async (plan, cycle = billingCycle) => {
     setIsUpdatingSubscription(true)
     try {
+      // Update the subscription with the plan and billing cycle
+      const { error } = await supabase.from("subscriptions").upsert({
+        user_id: user.id,
+        plan,
+        billing_cycle: cycle,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
       await updateSubscription(plan)
+      setBillingCycle(cycle)
+
+      toast({
+        title: "Subscription updated",
+        description: `Your subscription has been updated to ${plan.toUpperCase()} with ${cycle} billing.`,
+      })
+    } catch (error) {
+      console.error("Error updating subscription:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subscription",
+        variant: "destructive",
+      })
     } finally {
       setIsUpdatingSubscription(false)
     }
@@ -356,6 +432,7 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+
                 <div className="space-y-2 mt-4">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -368,7 +445,43 @@ export default function SettingsPage() {
                   />
                   <p className="text-xs text-muted-foreground">Your email cannot be changed</p>
                 </div>
-                <Button className="bg-primary hover:bg-primary/90 mt-4" type="submit" disabled={isLoading}>
+
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="companyName">Company name</Label>
+                  <Input
+                    id="companyName"
+                    name="companyName"
+                    className="bg-background"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      className="bg-background"
+                      value={formData.website}
+                      onChange={handleChange}
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobTitle">Job title</Label>
+                    <Input
+                      id="jobTitle"
+                      name="jobTitle"
+                      className="bg-background"
+                      value={formData.jobTitle}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <Button className="bg-primary hover:bg-primary/90 mt-6" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
@@ -378,6 +491,11 @@ export default function SettingsPage() {
                   )}
                 </Button>
               </form>
+
+              <div className="border-t border-border/40 pt-6 mt-6">
+                <h3 className="text-lg font-medium mb-4">Password</h3>
+                <PasswordReset />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -580,6 +698,25 @@ export default function SettingsPage() {
                 </Alert>
               )}
 
+              {/* Billing cycle toggle */}
+              <div className="flex justify-center mb-6">
+                <Tabs
+                  value={billingCycle}
+                  className="w-full max-w-md"
+                  onValueChange={(value) => setBillingCycle(value as "monthly" | "yearly")}
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="monthly">Monthly Billing</TabsTrigger>
+                    <TabsTrigger value="yearly">
+                      Yearly Billing
+                      <span className="ml-2 bg-green-500/20 text-green-500 text-xs px-2 py-0.5 rounded-full">
+                        Save 20%
+                      </span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-3">
                 {/* Free Plan */}
                 <motion.div
@@ -605,7 +742,7 @@ export default function SettingsPage() {
                         </li>
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
-                          <span>Basic aspect ratios</span>
+                          <span>Basic aspect ratios (1:1, 9:16)</span>
                         </li>
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
@@ -641,7 +778,7 @@ export default function SettingsPage() {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
-                  className={`p-4 rounded-lg border relative ${subscription.status === "pro" ? "border-primary bg-primary/10" : "border-border/40 bg-background"}`}
+                  className={`p-4 rounded-lg border relative ${subscription.status === "pro" && billingCycle === "monthly" ? "border-primary bg-primary/10" : "border-border/40 bg-background"}`}
                 >
                   {subscription.status !== "pro" && (
                     <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
@@ -651,8 +788,18 @@ export default function SettingsPage() {
                   <div className="flex flex-col h-full">
                     <div>
                       <h3 className="font-medium">Pro Plan</h3>
-                      <p className="text-2xl font-bold mt-2">$19</p>
-                      <p className="text-sm text-muted-foreground">Per month</p>
+                      <p className="text-2xl font-bold mt-2">
+                        ${billingCycle === "monthly" ? prices.pro.monthly : Math.round(prices.pro.yearly / 12)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Per {billingCycle === "monthly" ? "month" : "month, billed annually"}
+                      </p>
+                      {billingCycle === "yearly" && (
+                        <div className="mt-2 text-sm text-green-500 flex items-center">
+                          <Check className="h-4 w-4 mr-1" />
+                          Save ${Math.round(savings.pro.amount)} per year
+                        </div>
+                      )}
 
                       {/* Pro Plan features - UPDATED */}
                       <ul className="mt-4 space-y-2 text-sm">
@@ -677,12 +824,18 @@ export default function SettingsPage() {
 
                     <div className="mt-auto pt-4">
                       <Button
-                        variant={subscription.status === "pro" ? "secondary" : "default"}
-                        className={`w-full ${subscription.status !== "pro" ? "bg-primary hover:bg-primary/90" : ""}`}
-                        disabled={subscription.status === "pro" || isUpdatingSubscription || !isTableAvailable}
-                        onClick={() => handleSubscriptionChange("pro")}
+                        variant={
+                          subscription.status === "pro" && billingCycle === billingCycle ? "secondary" : "default"
+                        }
+                        className={`w-full ${subscription.status !== "pro" || billingCycle !== billingCycle ? "bg-primary hover:bg-primary/90" : ""}`}
+                        disabled={
+                          (subscription.status === "pro" && billingCycle === billingCycle) ||
+                          isUpdatingSubscription ||
+                          !isTableAvailable
+                        }
+                        onClick={() => handleSubscriptionChange("pro", billingCycle)}
                       >
-                        {subscription.status === "pro" ? (
+                        {subscription.status === "pro" && billingCycle === billingCycle ? (
                           <>
                             <Check className="mr-2 h-4 w-4" /> Current Plan
                           </>
@@ -692,7 +845,8 @@ export default function SettingsPage() {
                           </>
                         ) : (
                           <>
-                            <CreditCard className="mr-2 h-4 w-4" /> Upgrade
+                            <CreditCard className="mr-2 h-4 w-4" />{" "}
+                            {subscription.status === "pro" ? "Switch Billing" : "Upgrade"}
                           </>
                         )}
                       </Button>
@@ -704,13 +858,24 @@ export default function SettingsPage() {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
-                  className={`p-4 rounded-lg border ${subscription.status === "business" ? "border-primary bg-primary/10" : "border-border/40 bg-background"}`}
+                  className={`p-4 rounded-lg border ${subscription.status === "business" && billingCycle === billingCycle ? "border-primary bg-primary/10" : "border-border/40 bg-background"}`}
                 >
                   <div className="flex flex-col h-full">
                     <div>
                       <h3 className="font-medium">Business Plan</h3>
-                      <p className="text-2xl font-bold mt-2">$49</p>
-                      <p className="text-sm text-muted-foreground">Per month</p>
+                      <p className="text-2xl font-bold mt-2">
+                        $
+                        {billingCycle === "monthly" ? prices.business.monthly : Math.round(prices.business.yearly / 12)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Per {billingCycle === "monthly" ? "month" : "month, billed annually"}
+                      </p>
+                      {billingCycle === "yearly" && (
+                        <div className="mt-2 text-sm text-green-500 flex items-center">
+                          <Check className="h-4 w-4 mr-1" />
+                          Save ${Math.round(savings.business.amount)} per year
+                        </div>
+                      )}
 
                       {/* Business Plan features - UPDATED */}
                       <ul className="mt-4 space-y-2 text-sm">
@@ -739,12 +904,18 @@ export default function SettingsPage() {
 
                     <div className="mt-auto pt-4">
                       <Button
-                        variant={subscription.status === "business" ? "secondary" : "default"}
-                        className={`w-full ${subscription.status !== "business" ? "bg-primary hover:bg-primary/90" : ""}`}
-                        disabled={subscription.status === "business" || isUpdatingSubscription || !isTableAvailable}
-                        onClick={() => handleSubscriptionChange("business")}
+                        variant={
+                          subscription.status === "business" && billingCycle === billingCycle ? "secondary" : "default"
+                        }
+                        className={`w-full ${subscription.status !== "business" || billingCycle !== billingCycle ? "bg-primary hover:bg-primary/90" : ""}`}
+                        disabled={
+                          (subscription.status === "business" && billingCycle === billingCycle) ||
+                          isUpdatingSubscription ||
+                          !isTableAvailable
+                        }
+                        onClick={() => handleSubscriptionChange("business", billingCycle)}
                       >
-                        {subscription.status === "business" ? (
+                        {subscription.status === "business" && billingCycle === billingCycle ? (
                           <>
                             <Check className="mr-2 h-4 w-4" /> Current Plan
                           </>
@@ -754,7 +925,8 @@ export default function SettingsPage() {
                           </>
                         ) : (
                           <>
-                            <CreditCard className="mr-2 h-4 w-4" /> Upgrade
+                            <CreditCard className="mr-2 h-4 w-4" />{" "}
+                            {subscription.status === "business" ? "Switch Billing" : "Upgrade"}
                           </>
                         )}
                       </Button>
@@ -785,7 +957,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   {subscription.status === "free"
                     ? "No payment method required for the free plan."
-                    : "Your subscription will be billed monthly."}
+                    : `Your subscription will be billed ${billingCycle}.`}
                 </p>
                 {subscription.status !== "free" && (
                   <Button variant="outline" size="sm" disabled={!isTableAvailable}>

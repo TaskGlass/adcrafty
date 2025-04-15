@@ -1,10 +1,12 @@
-export type AnonymousAd = {
-  id: string
+export interface AnonymousAd {
   title: string
   prompt: string
   imageUrl: string
   aspectRatio: string
+  type?: "image" | "video"
+  id: string
   createdAt: string
+  adCopy?: any
 }
 
 const STORAGE_KEY = "anonymousAds"
@@ -16,10 +18,15 @@ export function saveAnonymousAd(ad: Omit<AnonymousAd, "id" | "createdAt">): Anon
       throw new Error("localStorage is not available")
     }
 
+    const adWithType = {
+      ...ad,
+      type: ad.type || "image",
+    }
+
     const existingAds = getAnonymousAds()
 
     const newAd: AnonymousAd = {
-      ...ad,
+      ...adWithType,
       id: generateId(),
       createdAt: new Date().toISOString(),
     }
@@ -98,6 +105,22 @@ export function getAnonymousAdCountByAspectRatio(aspectRatio: string): number {
   } catch (error) {
     console.error("Error getting anonymous ad count by aspect ratio:", error)
     return 0
+  }
+}
+
+// Add a function to get anonymous ads by type
+export function getAnonymousAdsByType(type: "image" | "video"): AnonymousAd[] {
+  try {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined") {
+      return []
+    }
+
+    const ads = getAnonymousAds()
+    return ads.filter((ad) => ad.type === type || (!ad.type && type === "image"))
+  } catch (error) {
+    console.error("Error getting anonymous ads by type:", error)
+    return []
   }
 }
 

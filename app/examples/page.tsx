@@ -66,7 +66,7 @@ export default function ExamplesPage() {
       <header className="border-b border-border/40 py-4">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <span className="text-primary text-2xl">AdCreator</span>
+            <span className="text-primary text-2xl">AdCreatify</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link
@@ -108,7 +108,7 @@ export default function ExamplesPage() {
                   Ad Examples
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  See what you can create with AdCreator AI. These examples showcase the quality and variety of ads you
+                  See what you can create with AdCreatify AI. These examples showcase the quality and variety of ads you
                   can generate.
                 </p>
               </div>
@@ -155,7 +155,7 @@ export default function ExamplesPage() {
       <footer className="border-t border-border/40 py-8">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
           <div className="flex items-center gap-2 font-bold">
-            <span className="text-primary">AdCreator</span>
+            <span className="text-primary">AdCreatify</span>
             <span className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} All rights reserved.
             </span>
