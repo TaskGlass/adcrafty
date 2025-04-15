@@ -60,18 +60,18 @@
     "zod": "^3.24.1",
     "@auth/core": "latest",
     "nodemailer": "latest",
-    "@supabase/supabase-js": "latest",
     "ws": "latest",
     "@emotion/is-prop-valid": "latest",
+    "@supabase/supabase-js": "latest",
     "next-auth": "latest",
     "cheerio": "latest",
     "dotenv": "latest",
-    "@supabase/auth-helpers-nextjs": "latest",
     "react-colorful": "latest",
     "openai": "latest",
     "framer-motion": "latest",
     "@ai-sdk/openai": "latest",
-    "ai": "latest"
+    "ai": "latest",
+    "@supabase/auth-helpers-nextjs": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

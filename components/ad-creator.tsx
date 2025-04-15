@@ -28,6 +28,7 @@ import { supabase } from "@/lib/supabase"
 import { getBrandSettings } from "@/lib/brand-settings-service"
 import type { BrandSettings } from "@/lib/brand-settings-service"
 import { Switch } from "@/components/ui/switch"
+import { AdPerformanceAnalyzer } from "@/components/ad-performance-analyzer"
 
 const supabaseClient = createClientComponentClient()
 
@@ -52,6 +53,8 @@ export function AdCreator() {
   const [isFetchingBrandSettings, setIsFetchingBrandSettings] = useState(false)
   const [generateAdCopy, setGenerateAdCopy] = useState(true)
   const [generatedAdCopy, setGeneratedAdCopy] = useState<any>(null)
+  const [generatedAdImage, setGeneratedAdImage] = useState<string | null>(null)
+  const [showPerformanceAnalyzer, setShowPerformanceAnalyzer] = useState(false)
   const maxFreeUsage = 3
   const maxSquareFormatUsage = 3
 
@@ -363,6 +366,12 @@ export function AdCreator() {
       }
 
       if (successCount > 0) {
+        // Show the ad performance analyzer for the first generated image
+        setGeneratedAdImage(generatedImages[0]?.url || null)
+        setShowPerformanceAnalyzer(true)
+
+        // Rest of the existing code...
+        // Update usage counts
         // Update usage counts
         if (
           isAnonymous ||
@@ -897,6 +906,21 @@ export function AdCreator() {
         subscription={subscription}
         squareFormatOnly={paywallTriggerRatio !== null}
       />
+      {showPerformanceAnalyzer && generatedAdImage && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mt-6"
+        >
+          <AdPerformanceAnalyzer
+            imageUrl={generatedAdImage}
+            adCopy={adCopy}
+            prompt={prompt}
+            aspectRatio={selectedAspectRatios[0]}
+          />
+        </motion.div>
+      )}
     </>
   )
 }

@@ -11,11 +11,29 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-// Create Supabase client with persistent sessions
+// Update the Supabase client configuration to ensure persistent sessions
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     storageKey: "adcreatify_auth_token",
+    storage: {
+      getItem: (key) => {
+        if (typeof window !== "undefined") {
+          return sessionStorage.getItem(key)
+        }
+        return null
+      },
+      setItem: (key, value) => {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(key, value)
+        }
+      },
+      removeItem: (key) => {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(key)
+        }
+      },
+    },
   },
 })
