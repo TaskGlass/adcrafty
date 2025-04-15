@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Plus } from "lucide-react"
-import { LogoCarousel } from "@/components/logo-carousel"
 
 export default function Home() {
   return (
@@ -52,7 +51,7 @@ export default function Home() {
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-4 text-center max-w-4xl mx-auto">
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl gradient-text">
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl gradient-text pb-1">
                   The Complete <br />
                   Ad Creation Platform
                 </h1>
@@ -85,9 +84,10 @@ export default function Home() {
                 <div className="w-3 h-3 rounded-full bg-green-500/70"></div>
               </div>
               <div className="pt-8">
+                {/* Use a fallback image in case the dashboard image fails to load */}
                 <img
                   src="/placeholder.svg?height=600&width=1200&text=AdCreatify+Dashboard"
-                  alt="AdCreatify Dashboard"
+                  alt="AdCreatify Dashboard Interface"
                   className="w-full h-auto"
                 />
               </div>
@@ -99,7 +99,7 @@ export default function Home() {
         <section id="features" className="py-20 md:py-32 bg-secondary">
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text pb-1">
                 Create Stunning Ads in Minutes
               </h2>
               <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
@@ -154,7 +154,7 @@ export default function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text pb-1">
                   Simple, Transparent Pricing
                 </h2>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-lg">
@@ -288,7 +288,15 @@ export default function Home() {
         <section className="py-16 bg-secondary/90 border-t border-border/40">
           <div className="container px-4 md:px-6">
             <p className="text-center text-sm text-muted-foreground mb-8">Loved by 1,000+ Brands & Agencies</p>
-            <LogoCarousel />
+            {/* Temporarily comment out LogoCarousel to isolate the issue */}
+            {/* <LogoCarousel /> */}
+            <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-8">
+                  <div className="w-24 h-8 bg-muted/30 rounded"></div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>
