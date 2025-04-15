@@ -818,7 +818,7 @@ export function AdCreator() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.55 text-muted-foreground" />
+                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="max-w-xs">
@@ -840,7 +840,7 @@ export function AdCreator() {
                       </Label>
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
                   <Button
