@@ -26,6 +26,7 @@ export function AdPerformanceAnalyzer({ imageUrl, adCopy, prompt, aspectRatio }:
   const [isExpanded, setIsExpanded] = useState(false)
   const [targetAudience, setTargetAudience] = useState("")
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
   const analyzeAd = async () => {
     if (!imageUrl && !adCopy && !prompt) {
@@ -41,6 +42,11 @@ export function AdPerformanceAnalyzer({ imageUrl, adCopy, prompt, aspectRatio }:
     setFallbackMessage(null)
 
     try {
+      // Add a small delay to prevent rapid retries
+      if (retryCount > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+
       const response = await fetch("/api/analyze-ad", {
         method: "POST",
         headers: {
@@ -55,8 +61,10 @@ export function AdPerformanceAnalyzer({ imageUrl, adCopy, prompt, aspectRatio }:
         }),
       })
 
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`)
+      // Handle non-JSON responses
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Server returned non-JSON response: ${contentType}`)
       }
 
       const data = await response.json()
@@ -69,6 +77,18 @@ export function AdPerformanceAnalyzer({ imageUrl, adCopy, prompt, aspectRatio }:
           setFallbackMessage(data.message || "Showing estimated analysis due to processing limitations.")
         }
       } else {
+        // If we get an error but have retries left, try again
+        if (retryCount < 2) {
+          setRetryCount((prev) => prev + 1)
+          toast({
+            title: "Retrying analysis",
+            description: "First attempt failed, trying again...",
+          })
+          setIsAnalyzing(false)
+          analyzeAd() // Retry
+          return
+        }
+
         toast({
           title: "Analysis failed",
           description: data.error || "Failed to analyze ad. Please try again.",
@@ -77,11 +97,40 @@ export function AdPerformanceAnalyzer({ imageUrl, adCopy, prompt, aspectRatio }:
       }
     } catch (error) {
       console.error("Error analyzing ad:", error)
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+
+      // If we have retries left, try again
+      if (retryCount < 2) {
+        setRetryCount((prev) => prev + 1)
+        toast({
+          title: "Retrying analysis",
+          description: "Connection issue, trying again...",
+        })
+        setIsAnalyzing(false)
+        analyzeAd() // Retry
+        return
+      }
+
+      // If we've exhausted retries, show fallback
+      setAnalysis({
+        overallScore: 65,
+        categoryScores: {
+          visualAppeal: 16,
+          messageClarity: 16,
+          brandAlignment: 13,
+          callToAction: 10,
+          targetAudienceFit: 10,
+        },
+        strengths: ["The ad appears to have a professional design", "The core message seems to be present"],
+        improvementAreas: [
+          "Consider refining the visual elements for better engagement",
+          "The call to action could be strengthened",
+          "More targeted messaging may improve audience response",
+        ],
+        performancePrediction:
+          "This ad may perform at an average level but has potential for improvement with some refinements.",
       })
+      setIsExpanded(true)
+      setFallbackMessage("Unable to connect to analysis service. Showing estimated analysis.")
     } finally {
       setIsAnalyzing(false)
     }
@@ -141,11 +190,18 @@ export function AdPerformanceAnalyzer({ imageUrl, adCopy, prompt, aspectRatio }:
             </p>
           </div>
 
-          <Button onClick={analyzeAd} disabled={isAnalyzing || (!imageUrl && !adCopy && !prompt)} className="w-full">
+          <Button
+            onClick={() => {
+              setRetryCount(0) // Reset retry count on new analysis
+              analyzeAd()
+            }}
+            disabled={isAnalyzing || (!imageUrl && !adCopy && !prompt)}
+            className="w-full"
+          >
             {isAnalyzing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
+                {retryCount > 0 ? `Retrying (${retryCount}/2)...` : "Analyzing..."}
               </>
             ) : (
               <>

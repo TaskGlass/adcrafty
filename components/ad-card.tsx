@@ -4,9 +4,11 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Download, Video, Trash, FileText, BarChart2 } from "lucide-react"
+import { Download, Video, Trash, FileText, BarChart2, ExternalLink } from "lucide-react"
 import Image from "next/image"
 import { AdPerformanceAnalyzer } from "@/components/ad-performance-analyzer"
+import { AdDetailModal } from "@/components/ad-detail-modal"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +23,7 @@ import {
 interface AdCardProps {
   ad: any
   onDelete: () => void
-  onDownload: () => void
+  onDownload: (ad: any, size?: string) => void
   isVideo?: boolean
   canDownload?: boolean
   isCheckingDownloadPermission?: boolean
@@ -36,8 +38,8 @@ export function AdCard({
   isCheckingDownloadPermission = false,
 }: AdCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showAdCopy, setShowAdCopy] = useState(false)
   const [showAnalyzer, setShowAnalyzer] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
 
   // Ensure ad has all required properties
   const safeAd = {
@@ -51,153 +53,159 @@ export function AdCard({
     adCopy: ad.adCopy || null,
   }
 
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">{safeAd.title}</h3>
-              <Badge variant="outline" className="ml-auto">
-                {safeAd.aspectRatio}
-              </Badge>
-              {isVideo && (
-                <Badge variant="secondary">
-                  <Video className="h-3 w-3 mr-1" />
-                  Video
-                </Badge>
-              )}
-              {safeAd.adCopy && (
-                <Badge variant="secondary" className="cursor-pointer" onClick={() => setShowAdCopy(!showAdCopy)}>
-                  <FileText className="h-3 w-3 mr-1" />
-                  Ad Copy
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">{safeAd.prompt}</p>
-            <div className="text-xs text-muted-foreground">
-              Created on {new Date(safeAd.createdAt).toLocaleDateString()}
-            </div>
+  // Format the prompt for better readability (truncated version for card)
+  const truncatedPrompt = safeAd.prompt.length > 100 ? safeAd.prompt.substring(0, 100) + "..." : safeAd.prompt
 
-            {showAdCopy && safeAd.adCopy && (
-              <div className="mt-2 p-3 bg-background/50 border border-border/40 rounded-md">
-                <h4 className="text-sm font-medium mb-2">Meta Ad Copy</h4>
-                {safeAd.adCopy.primaryText && (
-                  <div className="mb-2">
-                    <p className="text-xs font-medium">Primary Text:</p>
-                    <p className="text-xs text-muted-foreground">{safeAd.adCopy.primaryText}</p>
-                  </div>
+  return (
+    <>
+      <Card className="hover:shadow-md transition-shadow duration-200">
+        <CardContent className="p-4">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold">{safeAd.title}</h3>
+                <Badge variant="outline" className="ml-auto">
+                  {safeAd.aspectRatio}
+                </Badge>
+                {isVideo && (
+                  <Badge variant="secondary">
+                    <Video className="h-3 w-3 mr-1" />
+                    Video
+                  </Badge>
                 )}
-                {safeAd.adCopy.headlines && safeAd.adCopy.headlines.some((h) => h) && (
-                  <div className="mb-2">
-                    <p className="text-xs font-medium">Headlines:</p>
-                    <ul className="text-xs text-muted-foreground">
-                      {safeAd.adCopy.headlines
-                        .filter((h) => h)
-                        .map((headline, i) => (
-                          <li key={i}>{headline}</li>
-                        ))}
-                    </ul>
-                  </div>
+                {safeAd.adCopy && (
+                  <Badge variant="secondary">
+                    <FileText className="h-3 w-3 mr-1" />
+                    Copy
+                  </Badge>
                 )}
-                {safeAd.adCopy.descriptions && safeAd.adCopy.descriptions.some((d) => d) && (
-                  <div>
-                    <p className="text-xs font-medium">Descriptions:</p>
-                    <ul className="text-xs text-muted-foreground">
-                      {safeAd.adCopy.descriptions
-                        .filter((d) => d)
-                        .map((description, i) => (
-                          <li key={i}>{description}</li>
-                        ))}
-                    </ul>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">{truncatedPrompt}</p>
+              <div className="text-xs text-muted-foreground">
+                Created on {new Date(safeAd.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="relative aspect-square h-20 overflow-hidden rounded-md cursor-pointer border hover:border-primary/50"
+                onClick={() => setShowDetailModal(true)}
+              >
+                <AspectRatio ratio={getAspectRatioValue(safeAd.aspectRatio)}>
+                  <Image
+                    src={safeAd.imageUrl || "/placeholder.svg"}
+                    alt={safeAd.title}
+                    fill
+                    className="object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      const target = e.target as HTMLImageElement
+                      target.src = "/placeholder.svg"
+                    }}
+                  />
+                  {isVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Video className="h-8 w-8 text-white" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/20 transition-opacity">
+                    <ExternalLink className="h-6 w-6 text-white" />
                   </div>
-                )}
-                <Button variant="ghost" size="sm" className="mt-2 h-7 text-xs" onClick={() => setShowAdCopy(false)}>
-                  Hide Ad Copy
+                </AspectRatio>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDownload(ad)}
+                  title="Download"
+                  disabled={!canDownload || isCheckingDownloadPermission}
+                >
+                  <Download className="h-4 w-4" />
+                  <span className="sr-only">Download</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setShowDeleteConfirm(true)} title="Delete">
+                  <Trash className="h-4 w-4" />
+                  <span className="sr-only">Delete</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowAnalyzer(!showAnalyzer)}
+                  title="Analyze Performance"
+                >
+                  <BarChart2 className="h-4 w-4" />
+                  <span className="sr-only">Analyze Performance</span>
                 </Button>
               </div>
-            )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative aspect-square h-20 overflow-hidden rounded-md">
-              <Image
-                src={safeAd.imageUrl || "/placeholder.svg"}
-                alt={safeAd.title}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                  // Fallback if image fails to load
-                  const target = e.target as HTMLImageElement
-                  target.src = "/placeholder.svg"
-                }}
+
+          {showAnalyzer && (
+            <div className="mt-4 pt-4 border-t border-border/40">
+              <AdPerformanceAnalyzer
+                imageUrl={safeAd.imageUrl}
+                adCopy={safeAd.adCopy}
+                prompt={safeAd.prompt}
+                aspectRatio={safeAd.aspectRatio}
               />
-              {isVideo && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Video className="h-8 w-8 text-white" />
-                </div>
-              )}
             </div>
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onDownload}
-                title="Download"
-                disabled={!canDownload || isCheckingDownloadPermission}
-              >
-                <Download className="h-4 w-4" />
-                <span className="sr-only">Download</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => setShowDeleteConfirm(true)} title="Delete">
-                <Trash className="h-4 w-4" />
-                <span className="sr-only">Delete</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowAnalyzer(!showAnalyzer)}
-                title="Analyze Performance"
-              >
-                <BarChart2 className="h-4 w-4" />
-                <span className="sr-only">Analyze Performance</span>
-              </Button>
-            </div>
-          </div>
-        </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {showAnalyzer && (
-          <div className="mt-4 pt-4 border-t border-border/40">
-            <AdPerformanceAnalyzer
-              imageUrl={safeAd.imageUrl}
-              adCopy={safeAd.adCopy}
-              prompt={safeAd.prompt}
-              aspectRatio={safeAd.aspectRatio}
-            />
-          </div>
-        )}
-      </CardContent>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDelete()
+                setShowDeleteConfirm(false)
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {showDeleteConfirm && (
-        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  onDelete()
-                  setShowDeleteConfirm(false)
-                }}
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-    </Card>
+      {/* Ad Detail Modal */}
+      <AdDetailModal
+        ad={safeAd}
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        onDownload={onDownload}
+      />
+    </>
   )
+}
+
+// Helper function to convert aspect ratio string to numeric value
+function getAspectRatioValue(aspectRatio: string): number {
+  // Check if it's a Google ad size format (e.g., "300x250")
+  if (/^\d+x\d+$/.test(aspectRatio)) {
+    const [width, height] = aspectRatio.split("x").map(Number)
+    return width / height
+  }
+
+  // For standard aspect ratios
+  switch (aspectRatio) {
+    case "1:1":
+      return 1
+    case "4:5":
+      return 4 / 5
+    case "9:16":
+      return 9 / 16
+    case "16:9":
+      return 16 / 9
+    case "1.91:1":
+      return 1.91
+    default:
+      return 1
+  }
 }

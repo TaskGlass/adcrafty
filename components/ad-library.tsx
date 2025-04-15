@@ -1,11 +1,8 @@
 "use client"
 
 import { CardContent } from "@/components/ui/card"
-
 import { Card } from "@/components/ui/card"
-
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
@@ -124,7 +121,7 @@ export default function AdLibrary() {
     }
   }
 
-  const handleDownload = async (ad: any) => {
+  const handleDownload = async (ad: any, size?: string) => {
     if (!canDownload) {
       toast({
         title: "Download limit reached",
@@ -142,6 +139,19 @@ export default function AdLibrary() {
         trackAnonymousDownload()
       } else if (user?.id) {
         await trackDownload(user.id, ad.id || "")
+      }
+
+      // If a specific size is requested, we would normally resize the image
+      // For now, we'll just open the original image but in a real implementation
+      // you would call a resize API endpoint
+      if (size) {
+        // In a real implementation, you would call a resize API
+        // For now, we'll just show a toast and open the original
+        toast({
+          title: `Downloading ${size}`,
+          description:
+            "The image will be downloaded in the original size. In a production environment, this would be resized.",
+        })
       }
 
       // Open the image in a new tab
@@ -189,7 +199,7 @@ export default function AdLibrary() {
                     key={ad.id || `anonymous-${ad.title}`}
                     ad={ad}
                     onDelete={() => handleDelete(ad.id || "")}
-                    onDownload={() => handleDownload(ad)}
+                    onDownload={handleDownload}
                     canDownload={canDownload}
                     isCheckingDownloadPermission={isCheckingDownloadPermission}
                   />
@@ -220,7 +230,7 @@ export default function AdLibrary() {
                     key={ad.id || `anonymous-${ad.title}`}
                     ad={ad}
                     onDelete={() => handleDelete(ad.id || "")}
-                    onDownload={() => handleDownload(ad)}
+                    onDownload={handleDownload}
                     isVideo={true}
                     canDownload={canDownload}
                     isCheckingDownloadPermission={isCheckingDownloadPermission}
