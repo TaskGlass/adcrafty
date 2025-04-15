@@ -4,7 +4,7 @@ import DashboardShell from "@/components/dashboard-shell"
 import AdLibrary from "@/components/ad-library"
 
 export const metadata: Metadata = {
-  title: "Ad Library - AdCreator AI",
+  title: "Ad Library - AdCreatify",
   description: "View your ad creation history",
 }
 

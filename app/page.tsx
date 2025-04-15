@@ -8,7 +8,7 @@ export default function Home() {
       <header className="border-b border-border/40 py-4">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl transition-colors hover:text-primary">
-            <span className="text-primary text-2xl">AdCreator</span>
+            <span className="text-primary text-2xl">AdCreatify</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link
@@ -85,8 +85,8 @@ export default function Home() {
               </div>
               <div className="pt-8">
                 <img
-                  src="/placeholder.svg?height=600&width=1200&text=AdCreator+AI+Dashboard"
-                  alt="AdCreator AI Dashboard"
+                  src="/placeholder.svg?height=600&width=1200&text=AdCreatify+Dashboard"
+                  alt="AdCreatify Dashboard"
                   className="w-full h-auto"
                 />
               </div>
@@ -157,7 +157,7 @@ export default function Home() {
                   Simple, Transparent Pricing
                 </h2>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-lg">
-                  Start with 5 free generations. Upgrade when you're ready.
+                  Start with 3 free generations. Upgrade when you're ready.
                 </p>
               </div>
             </div>
@@ -174,19 +174,19 @@ export default function Home() {
                       <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       </div>
-                      <span>5 ad generations</span>
+                      <span>3 ad generations per month</span>
+                    </li>
+                    <li className="flex items-center">
+                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                      </div>
+                      <span>3 downloads per month</span>
                     </li>
                     <li className="flex items-center">
                       <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       </div>
                       <span>Basic aspect ratios</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Ad library access</span>
                     </li>
                   </ul>
                 </div>
@@ -213,19 +213,19 @@ export default function Home() {
                       <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       </div>
-                      <span>Unlimited ad generations</span>
+                      <span>50 ad generations per month</span>
+                    </li>
+                    <li className="flex items-center">
+                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                      </div>
+                      <span>50 downloads per month</span>
                     </li>
                     <li className="flex items-center">
                       <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       </div>
                       <span>All aspect ratios</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Priority support</span>
                     </li>
                   </ul>
                 </div>
@@ -253,13 +253,13 @@ export default function Home() {
                       <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       </div>
-                      <span>Team collaboration</span>
+                      <span>Unlimited downloads</span>
                     </li>
                     <li className="flex items-center">
                       <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       </div>
-                      <span>Dedicated support</span>
+                      <span>Team collaboration</span>
                     </li>
                   </ul>
                 </div>
@@ -302,7 +302,7 @@ export default function Home() {
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold">
             <Link href="/" className="text-primary hover:text-primary/90 transition-colors">
-              AdCreator
+              AdCreatify
             </Link>
             <span className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} All rights reserved.

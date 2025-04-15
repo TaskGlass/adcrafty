@@ -101,6 +101,61 @@ export function getAnonymousAdCountByAspectRatio(aspectRatio: string): number {
   }
 }
 
+// Add these functions to track anonymous downloads
+
+const DOWNLOAD_STORAGE_KEY = "anonymousDownloads"
+
+export function getAnonymousDownloadCount(): number {
+  try {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined") {
+      return 0
+    }
+
+    const count = localStorage.getItem(DOWNLOAD_STORAGE_KEY)
+    return count ? Number.parseInt(count, 10) : 0
+  } catch (error) {
+    console.error("Error getting anonymous download count:", error)
+    return 0
+  }
+}
+
+export function incrementAnonymousDownloadCount(): void {
+  try {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const currentCount = getAnonymousDownloadCount()
+    localStorage.setItem(DOWNLOAD_STORAGE_KEY, (currentCount + 1).toString())
+  } catch (error) {
+    console.error("Error incrementing anonymous download count:", error)
+  }
+}
+
+// Add a function to reset download count at the beginning of each month
+export function checkAndResetMonthlyCounters(): void {
+  try {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const lastResetMonth = localStorage.getItem("lastResetMonth")
+    const currentMonth = new Date().getMonth()
+
+    // If we haven't reset this month or it's a new month
+    if (!lastResetMonth || Number.parseInt(lastResetMonth, 10) !== currentMonth) {
+      // Reset download counter
+      localStorage.setItem(DOWNLOAD_STORAGE_KEY, "0")
+      // Update the last reset month
+      localStorage.setItem("lastResetMonth", currentMonth.toString())
+    }
+  } catch (error) {
+    console.error("Error checking monthly counters:", error)
+  }
+}
+
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 }

@@ -593,10 +593,15 @@ export default function SettingsPage() {
                       <p className="text-2xl font-bold mt-2">$0</p>
                       <p className="text-sm text-muted-foreground">Forever free</p>
 
+                      {/* Free Plan features - UPDATED */}
                       <ul className="mt-4 space-y-2 text-sm">
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
-                          <span>5 ad generations</span>
+                          <span>3 ad generations per month</span>
+                        </li>
+                        <li className="flex items-start">
+                          <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
+                          <span>3 downloads per month</span>
                         </li>
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
@@ -649,10 +654,15 @@ export default function SettingsPage() {
                       <p className="text-2xl font-bold mt-2">$19</p>
                       <p className="text-sm text-muted-foreground">Per month</p>
 
+                      {/* Pro Plan features - UPDATED */}
                       <ul className="mt-4 space-y-2 text-sm">
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
-                          <span>Unlimited ad generations</span>
+                          <span>50 ad generations per month</span>
+                        </li>
+                        <li className="flex items-start">
+                          <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
+                          <span>50 downloads per month</span>
                         </li>
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
@@ -702,10 +712,19 @@ export default function SettingsPage() {
                       <p className="text-2xl font-bold mt-2">$49</p>
                       <p className="text-sm text-muted-foreground">Per month</p>
 
+                      {/* Business Plan features - UPDATED */}
                       <ul className="mt-4 space-y-2 text-sm">
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
                           <span>Everything in Pro</span>
+                        </li>
+                        <li className="flex items-start">
+                          <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
+                          <span>Unlimited ad generations</span>
+                        </li>
+                        <li className="flex items-start">
+                          <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
+                          <span>Unlimited downloads</span>
                         </li>
                         <li className="flex items-start">
                           <Check className="h-4 w-4 text-primary mr-2 mt-0.5 shrink-0" />
@@ -748,10 +767,15 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Usage</h3>
+                {/* Usage display - UPDATED */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">Ad generations used</p>
                   <p className="text-sm font-medium">
-                    {subscription.status === "free" ? `${usageCount} of 5` : `${usageCount} (Unlimited)`}
+                    {subscription.status === "free"
+                      ? `${usageCount} of 3`
+                      : subscription.status === "pro"
+                        ? `${usageCount} of 50`
+                        : `${usageCount} (Unlimited)`}
                   </p>
                 </div>
               </div>

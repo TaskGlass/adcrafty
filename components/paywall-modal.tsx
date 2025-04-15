@@ -81,7 +81,8 @@ export function PaywallModal({ open, onClose, user, subscription, squareFormatOn
   }
 
   const features = [
-    "Unlimited ad generations",
+    subscription?.status === "free" ? "50 ad generations per month" : "Unlimited ad generations",
+    subscription?.status === "free" ? "50 downloads per month" : "Unlimited downloads",
     "All aspect ratios",
     "Priority support",
     "Advanced customization options",
@@ -97,11 +98,13 @@ export function PaywallModal({ open, onClose, user, subscription, squareFormatOn
           <DialogDescription>
             {isAnonymous
               ? squareFormatOnly
-                ? "You've used all your 3 free square format (1:1) generations. Sign up to continue creating ads."
-                : "As a guest user, you can only create square format (1:1) ads. Sign up to access all formats."
+                ? "You've used all your 3 free generations this month. Sign up to continue creating ads."
+                : "As a guest user, you can only create 3 ads per month. Sign up for more options."
               : squareFormatOnly
-                ? "You've used all your 3 free square format (1:1) generations. Upgrade to continue."
-                : "You've used all your 5 free generations. Upgrade to a paid plan to create unlimited ads."}
+                ? "You've used all your 3 free generations this month. Upgrade to continue."
+                : subscription?.status === "free"
+                  ? "You've used all your 3 free generations this month. Upgrade to a paid plan for more ads."
+                  : "You've used all your 50 pro generations this month. Upgrade to Business for unlimited ads."}
           </DialogDescription>
         </DialogHeader>
 

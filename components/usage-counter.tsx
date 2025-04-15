@@ -38,9 +38,11 @@ export function UsageCounter({ current, max, user, subscription, aspectRatio }: 
         <span>
           {hasUnlimitedAccess
             ? "Unlimited access"
-            : aspectRatio === "1:1"
-              ? `Square format: ${current}/${max}`
-              : `Free uses: ${current}/${max}`}
+            : subscription?.status === "pro"
+              ? `Pro plan: ${current}/${max} this month`
+              : aspectRatio === "1:1"
+                ? `Square format: ${current}/${max} this month`
+                : `Free uses: ${current}/${max} this month`}
         </span>
         {current >= max && !hasUnlimitedAccess && (
           <motion.span

@@ -48,7 +48,7 @@ export default function AdCreator() {
   const [brandAnalysis, setBrandAnalysis] = useState<any>(null)
   const [brandSettings, setBrandSettings] = useState<BrandSettings | null>(null)
   const [isFetchingBrandSettings, setIsFetchingBrandSettings] = useState(false)
-  const maxFreeUsage = 5
+  const maxFreeUsage = 3
   const maxSquareFormatUsage = 3
 
   // Fetch usage count based on user status
@@ -211,11 +211,11 @@ export default function AdCreator() {
 
   const handleGenerate = async () => {
     // Check if user has reached limit and needs to upgrade
-    // Skip this check for users with Pro or Business subscription
     const hasUnlimitedAccess =
-      subscription.status === "pro" ||
-      subscription.status === "business" ||
-      user?.email?.toLowerCase() === "cameronnpost@outlook.com"
+      subscription.status === "business" || user?.email?.toLowerCase() === "cameronnpost@outlook.com"
+
+    // Check if pro user has reached their limit (50 generations)
+    const isProUserReachedLimit = subscription.status === "pro" && usageCount >= 50
 
     // Check if only using 1:1 format
     const isOnlySquareFormat = selectedAspectRatios.length === 1 && selectedAspectRatios[0] === "1:1"
@@ -235,18 +235,17 @@ export default function AdCreator() {
       }
     }
     // For logged in users with free plan
-    else if (!hasUnlimitedAccess) {
-      // If using non-square formats and reached general limit, show paywall
-      if (!isOnlySquareFormat && usageCount >= maxFreeUsage) {
+    else if (subscription.status === "free") {
+      // If reached the free usage limit, show paywall
+      if (usageCount >= maxFreeUsage) {
         setShowPaywall(true)
         return
       }
-
-      // If using square format and reached square limit, show paywall
-      if (isOnlySquareFormat && squareFormatUsage >= maxSquareFormatUsage) {
-        setShowPaywall(true)
-        return
-      }
+    }
+    // For pro users who reached their limit
+    else if (isProUserReachedLimit) {
+      setShowPaywall(true)
+      return
     }
 
     if (!prompt.trim()) {

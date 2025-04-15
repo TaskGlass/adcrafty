@@ -8,7 +8,7 @@ export default function PricingPage() {
       <header className="border-b border-border/40 py-4">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <span className="text-primary text-2xl">AdCreator</span>
+            <span className="text-primary text-2xl">AdCreatify</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link
@@ -52,7 +52,7 @@ export default function PricingPage() {
                   Simple, Transparent Pricing
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-6">
-                  Choose the plan that's right for you. Start with 5 free generations, upgrade when you're ready.
+                  Choose the plan that's right for you. Start with 3 free generations, upgrade when you're ready.
                 </p>
               </div>
             </div>
@@ -65,14 +65,18 @@ export default function PricingPage() {
             <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
               {/* Free Plan */}
               <div className="flex flex-col p-8 bg-secondary rounded-lg border border-border/40 h-full">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-xl font-bold">Free</h3>
                   <div className="mt-4 text-4xl font-bold">$0</div>
                   <p className="text-muted-foreground mt-2">Forever free</p>
                   <ul className="mt-8 space-y-4">
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>5 ad generations</span>
+                      <span>3 ad generations per month</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>3 downloads per month</span>
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
@@ -114,14 +118,18 @@ export default function PricingPage() {
                 <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
                   <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</span>
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="text-xl font-bold">Pro</h3>
                   <div className="mt-4 text-4xl font-bold">$19</div>
                   <p className="text-muted-foreground mt-2">Per month</p>
                   <ul className="mt-8 space-y-4">
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Unlimited ad generations</span>
+                      <span>50 ad generations per month</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>50 downloads per month</span>
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
@@ -158,7 +166,7 @@ export default function PricingPage() {
 
               {/* Business Plan */}
               <div className="flex flex-col p-8 bg-secondary rounded-lg border border-border/40 h-full">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-xl font-bold">Business</h3>
                   <div className="mt-4 text-4xl font-bold">$49</div>
                   <p className="text-muted-foreground mt-2">Per month</p>
@@ -190,6 +198,14 @@ export default function PricingPage() {
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
                       <span>Dedicated account manager</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Unlimited ad generations</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Unlimited downloads</span>
                     </li>
                   </ul>
                 </div>
@@ -228,8 +244,14 @@ export default function PricingPage() {
                 <tbody>
                   <tr className="border-b border-border/40">
                     <td className="py-4 px-6 text-left">Ad Generations</td>
-                    <td className="py-4 px-6 text-center">5 per account</td>
+                    <td className="py-4 px-6 text-center">3 per month</td>
+                    <td className="py-4 px-6 text-center">50 per month</td>
                     <td className="py-4 px-6 text-center">Unlimited</td>
+                  </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-4 px-6 text-left">Downloads</td>
+                    <td className="py-4 px-6 text-center">3 per month</td>
+                    <td className="py-4 px-6 text-center">50 per month</td>
                     <td className="py-4 px-6 text-center">Unlimited</td>
                   </tr>
                   <tr className="border-b border-border/40">
@@ -344,9 +366,9 @@ export default function PricingPage() {
               </div>
 
               <div className="bg-secondary p-6 rounded-lg border border-border/40">
-                <h3 className="text-lg font-bold mb-3">What happens after I use my 5 free generations?</h3>
+                <h3 className="text-lg font-bold mb-3">What happens after I use my free generations?</h3>
                 <p className="text-muted-foreground">
-                  After using your 5 free generations, you'll need to upgrade to a paid plan to continue creating ads.
+                  After using your 3 free generations, you'll need to upgrade to a paid plan to continue creating ads.
                   Your existing ads will remain accessible in your library.
                 </p>
               </div>
@@ -370,7 +392,7 @@ export default function PricingPage() {
                 Ready to Get Started?
               </h2>
               <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto mb-8">
-                Try AdCreator AI for free and see how it can transform your ad creation process.
+                Try AdCreatify for free and see how it can transform your ad creation process.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/signup">
@@ -392,7 +414,7 @@ export default function PricingPage() {
       <footer className="border-t border-border/40 py-8">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold">
-            <span className="text-primary">AdCreator</span>
+            <span className="text-primary">AdCreatify</span>
             <span className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} All rights reserved.
             </span>

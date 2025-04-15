@@ -13,15 +13,18 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { canUserDownload, trackDownload, trackAnonymousDownload } from "@/lib/usage-service"
 
 export default function AdLibrary() {
-  const { user, isAnonymous } = useAuth()
+  const { user, isAnonymous, subscription } = useAuth()
   const [ads, setAds] = useState<(Ad | AnonymousAd)[]>([])
   const [filteredAds, setFilteredAds] = useState<(Ad | AnonymousAd)[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [canDownload, setCanDownload] = useState(true)
+  const [isCheckingDownloadPermission, setIsCheckingDownloadPermission] = useState(false)
 
   useEffect(() => {
     async function fetchAds() {
@@ -69,6 +72,23 @@ export default function AdLibrary() {
     setFilteredAds(result)
   }, [searchQuery, selectedFilter, ads])
 
+  useEffect(() => {
+    async function checkDownloadPermissions() {
+      setIsCheckingDownloadPermission(true)
+      try {
+        const hasPermission = await canUserDownload(user?.id || null, subscription?.status || null)
+        setCanDownload(hasPermission)
+      } catch (error) {
+        console.error("Error checking download permissions:", error)
+        setCanDownload(true) // Default to allowing downloads if check fails
+      } finally {
+        setIsCheckingDownloadPermission(false)
+      }
+    }
+
+    checkDownloadPermissions()
+  }, [user, subscription])
+
   const handleDelete = async (id: string) => {
     try {
       let success = false
@@ -105,6 +125,41 @@ export default function AdLibrary() {
     const ratios = new Set<string>()
     ads.forEach((ad) => ratios.add(ad.aspectRatio))
     return Array.from(ratios)
+  }
+
+  const handleDownload = async (ad) => {
+    if (!canDownload) {
+      toast({
+        title: "Download limit reached",
+        description: isAnonymous
+          ? "You've reached your monthly download limit. Sign up for more downloads."
+          : "You've reached your monthly download limit. Please upgrade your plan for more downloads.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Track the download
+      if (isAnonymous) {
+        trackAnonymousDownload()
+      } else if (user?.id) {
+        await trackDownload(user.id, ad.id)
+      }
+
+      // Open the image in a new tab
+      window.open(ad.imageUrl, "_blank")
+
+      // Update the local state to reflect the new download count
+      setCanDownload(await canUserDownload(user?.id || null, subscription?.status || null))
+    } catch (error) {
+      console.error("Error downloading image:", error)
+      toast({
+        title: "Download failed",
+        description: "Failed to download the image. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -250,10 +305,11 @@ export default function AdLibrary() {
                                 variant="outline"
                                 size="sm"
                                 className="w-full"
-                                onClick={() => window.open(ad.imageUrl, "_blank")}
+                                onClick={() => handleDownload(ad)}
+                                disabled={!canDownload || isCheckingDownloadPermission}
                               >
                                 <Download className="h-3 w-3 mr-1" />
-                                Download
+                                {isCheckingDownloadPermission ? "Checking..." : "Download"}
                               </Button>
                               <Button variant="outline" size="sm" className="w-full">
                                 <Share2 className="h-3 w-3 mr-1" />
