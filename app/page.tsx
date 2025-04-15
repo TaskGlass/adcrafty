@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Plus } from "lucide-react"
+import { LogoCarousel } from "@/components/logo-carousel"
 
 export default function Home() {
   return (
@@ -284,16 +285,10 @@ export default function Home() {
         </section>
 
         {/* Social Proof */}
-        <section className="py-16 bg-secondary border-t border-border/40">
+        <section className="py-16 bg-secondary/90 border-t border-border/40">
           <div className="container px-4 md:px-6">
             <p className="text-center text-sm text-muted-foreground mb-8">Loved by 1,000+ Brands & Agencies</p>
-            <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-8">
-                  <div className="w-24 h-8 bg-muted/30 rounded"></div>
-                </div>
-              ))}
-            </div>
+            <LogoCarousel />
           </div>
         </section>
       </main>
