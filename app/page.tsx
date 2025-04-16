@@ -1,16 +1,68 @@
+"use client"
+
 import Link from "next/link"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Plus } from "lucide-react"
+import { ArrowRight, Zap, Layout, Library } from "lucide-react"
+import { motion } from "framer-motion"
+import { ParticlesBackground } from "@/components/ui/particles-background"
+import { AnimatedFeatureCard } from "@/components/ui/animated-feature-card"
+import { PricingToggle } from "@/components/ui/pricing-toggle"
+import { FloatingElements } from "@/components/ui/floating-elements"
+import { LogoCarousel } from "@/components/logo-carousel"
 
 export default function Home() {
+  const [isYearly, setIsYearly] = useState(false)
+
+  // Pricing data with monthly and yearly options
+  const pricingPlans = [
+    {
+      name: "Free",
+      price: { monthly: 0, yearly: 0 },
+      description: "Forever free",
+      features: ["3 ad generations per month", "3 downloads per month", "Basic aspect ratios"],
+    },
+    {
+      name: "Pro",
+      price: { monthly: 19, yearly: 180 }, // 15/mo when paid yearly (20% discount)
+      description: isYearly ? "Per year" : "Per month",
+      popular: true,
+      features: ["50 ad generations per month", "50 downloads per month", "All aspect ratios"],
+    },
+    {
+      name: "Business",
+      price: { monthly: 49, yearly: 468 }, // 39/mo when paid yearly (20% discount)
+      description: isYearly ? "Per year" : "Per month",
+      features: ["Unlimited ad generations", "Unlimited downloads", "Team collaboration"],
+    },
+  ]
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="border-b border-border/40 py-4">
+    <div className="flex flex-col min-h-screen bg-background relative">
+      {/* Particles Background */}
+      <ParticlesBackground />
+
+      {/* Noise Texture Overlay */}
+      <div className="noise-overlay" />
+
+      <header className="border-b border-border/40 py-4 relative z-10">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl transition-colors hover:text-primary">
-            <span className="text-primary text-2xl">AdCreatify</span>
+            <motion.span
+              className="text-primary text-2xl"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              AdCreatify
+            </motion.span>
           </Link>
-          <nav className="hidden md:flex items-center gap-8">
+          <motion.nav
+            className="hidden md:flex items-center gap-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
             <Link
               href="/features"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -29,27 +81,38 @@ export default function Home() {
             >
               Examples
             </Link>
-          </nav>
-          <div className="flex items-center gap-4">
+          </motion.nav>
+          <motion.div
+            className="flex items-center gap-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
             <Link href="/login">
               <Button variant="ghost" size="sm" className="hidden md:flex">
                 Login
               </Button>
             </Link>
             <Link href="/signup">
-              <Button size="sm" className="bg-primary hover:bg-primary/90">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 glow">
                 Sign Up
               </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 relative z-10">
         {/* Hero Section */}
         <section className="relative py-20 md:py-32 overflow-hidden hero-gradient">
+          <FloatingElements />
           <div className="container px-4 md:px-6 relative z-10">
-            <div className="flex flex-col items-center space-y-4 text-center max-w-4xl mx-auto">
+            <motion.div
+              className="flex flex-col items-center space-y-4 text-center max-w-4xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+            >
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl gradient-text pb-1">
                   The Complete <br />
@@ -60,9 +123,14 @@ export default function Home() {
                   required!
                 </p>
               </div>
-              <div className="mt-16 flex flex-col sm:flex-row gap-4">
+              <motion.div
+                className="mt-16 flex flex-col sm:flex-row gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.7 }}
+              >
                 <Link href="/dashboard">
-                  <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base w-full sm:w-auto">
+                  <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base w-full sm:w-auto glow">
                     Try Now - No Signup <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -71,88 +139,98 @@ export default function Home() {
                     Get Started
                   </Button>
                 </Link>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
 
           {/* Product Screenshot */}
-          <div className="mt-16 md:mt-20 max-w-6xl mx-auto px-4">
-            <div className="relative rounded-lg overflow-hidden border border-border/40 shadow-2xl">
+          <motion.div
+            className="mt-16 md:mt-20 max-w-6xl mx-auto px-4"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.7 }}
+          >
+            <div className="relative rounded-lg overflow-hidden border border-border/40 shadow-2xl animated-border">
               <div className="absolute top-0 left-0 right-0 h-8 bg-secondary flex items-center px-3 gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-destructive/70"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-500/70"></div>
                 <div className="w-3 h-3 rounded-full bg-green-500/70"></div>
               </div>
               <div className="pt-8">
-                {/* Use a fallback image in case the dashboard image fails to load */}
                 <img
-                  src="/placeholder.svg?height=600&width=1200&text=AdCreatify+Dashboard"
+                  src="/images/dashboard-screenshot.png"
                   alt="AdCreatify Dashboard Interface"
                   className="w-full h-auto"
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 md:py-32 bg-secondary">
+        <section id="features" className="py-20 md:py-32 bg-secondary relative overflow-hidden">
           <div className="container px-4 md:px-6">
-            <div className="text-center mb-12">
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text pb-1">
                 Create Stunning Ads in Minutes
               </h2>
               <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
                 Our AI-powered platform makes it easy to create professional ads for any platform.
               </p>
-            </div>
+            </motion.div>
 
             <div className="grid gap-8 md:grid-cols-3">
-              <div className="bg-background p-8 rounded-lg border border-border/40">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                  <Plus className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">No Signup Required</h3>
-                <p className="text-muted-foreground">
-                  Try the tool instantly without creating an account. Sign up later to save your creations.
-                </p>
-              </div>
+              <AnimatedFeatureCard
+                icon={<Zap className="h-6 w-6 text-primary" />}
+                title="No Signup Required"
+                description="Try the tool instantly without creating an account. Sign up later to save your creations."
+              />
 
-              <div className="bg-background p-8 rounded-lg border border-border/40">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                  <Plus className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">All Standard Formats</h3>
-                <p className="text-muted-foreground">
-                  Automatically generate ads in all common aspect ratios for Meta and Google.
-                </p>
-              </div>
+              <AnimatedFeatureCard
+                icon={<Layout className="h-6 w-6 text-primary" />}
+                title="All Standard Formats"
+                description="Automatically generate ads in all common aspect ratios for Meta and Google."
+              />
 
-              <div className="bg-background p-8 rounded-lg border border-border/40">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                  <Plus className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Ad Library</h3>
-                <p className="text-muted-foreground">
-                  Access your history of created ads anytime in your personal library.
-                </p>
-              </div>
+              <AnimatedFeatureCard
+                icon={<Library className="h-6 w-6 text-primary" />}
+                title="Ad Library"
+                description="Access your history of created ads anytime in your personal library."
+              />
             </div>
 
-            <div className="mt-12 text-center">
+            <motion.div
+              className="mt-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
               <Link href="/features">
-                <Button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-md">
+                <Button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-md glow">
                   Explore All Features <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* Pricing Section */}
         <section id="pricing" className="py-20 md:py-32 bg-background">
           <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+            <motion.div
+              className="flex flex-col items-center justify-center space-y-4 text-center mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text pb-1">
                   Simple, Transparent Pricing
@@ -161,147 +239,101 @@ export default function Home() {
                   Start with 3 free generations. Upgrade when you're ready.
                 </p>
               </div>
-            </div>
+            </motion.div>
+
+            <PricingToggle onToggle={setIsYearly} />
 
             <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto">
-              {/* Free Plan */}
-              <div className="flex flex-col p-8 bg-secondary rounded-lg border border-border/40">
-                <div>
-                  <h3 className="text-xl font-bold">Free</h3>
-                  <div className="mt-4 text-3xl font-bold">$0</div>
-                  <p className="text-muted-foreground mt-2">Forever free</p>
-                  <ul className="mt-6 space-y-3">
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>3 ad generations per month</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>3 downloads per month</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Basic aspect ratios</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="mt-8">
-                  <Link href="/dashboard">
-                    <Button variant="outline" className="w-full">
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Pro Plan */}
-              <div className="flex flex-col p-8 bg-secondary rounded-lg border-2 border-primary relative">
-                <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
-                  <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">Pro</h3>
-                  <div className="mt-4 text-3xl font-bold">$19</div>
-                  <p className="text-muted-foreground mt-2">Per month</p>
-                  <ul className="mt-6 space-y-3">
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>50 ad generations per month</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>50 downloads per month</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>All aspect ratios</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="mt-8">
-                  <Link href="/signup">
-                    <Button className="w-full bg-primary hover:bg-primary/90">Get Started</Button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Business Plan */}
-              <div className="flex flex-col p-8 bg-secondary rounded-lg border border-border/40">
-                <div>
-                  <h3 className="text-xl font-bold">Business</h3>
-                  <div className="mt-4 text-3xl font-bold">$49</div>
-                  <p className="text-muted-foreground mt-2">Per month</p>
-                  <ul className="mt-6 space-y-3">
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Unlimited ad generations</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Unlimited downloads</span>
-                    </li>
-                    <li className="flex items-center">
-                      <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Team collaboration</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="mt-8">
-                  <Link href="/signup">
-                    <Button variant="outline" className="w-full">
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+              {pricingPlans.map((plan, index) => (
+                <motion.div
+                  key={plan.name}
+                  className={`flex flex-col p-8 bg-secondary rounded-lg ${
+                    plan.popular ? "border-2 border-primary relative" : "border border-border/40"
+                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  whileHover={{ y: -5 }}
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
+                      <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</span>
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                    <div className="mt-4 text-3xl font-bold">
+                      ${isYearly ? plan.price.yearly : plan.price.monthly}
+                      {plan.price.monthly === 0 && ""}
+                    </div>
+                    <p className="text-muted-foreground mt-2">{plan.description}</p>
+                    <ul className="mt-6 space-y-3">
+                      {plan.features.map((feature, i) => (
+                        <motion.li
+                          key={i}
+                          className="flex items-center"
+                          initial={{ opacity: 0, x: -10 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.3 + i * 0.1, duration: 0.3 }}
+                        >
+                          <div className="w-4 h-4 bg-primary/20 rounded-full mr-3 flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                          </div>
+                          <span>{feature}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="mt-8">
+                    <Link href={plan.name === "Free" ? "/dashboard" : "/signup"}>
+                      <Button
+                        variant={plan.popular ? "default" : "outline"}
+                        className={`w-full ${plan.popular ? "bg-primary hover:bg-primary" : "outline"} `}
+                      >
+                        Get Started
+                      </Button>
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
-            <div className="mt-12 text-center">
+            <motion.div
+              className="mt-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
               <Link href="/pricing">
                 <Button variant="outline" className="px-6 py-2 rounded-md">
                   View Full Pricing Details <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* Social Proof */}
         <section className="py-16 bg-secondary/90 border-t border-border/40">
           <div className="container px-4 md:px-6">
-            <p className="text-center text-sm text-muted-foreground mb-8">Loved by 1,000+ Brands & Agencies</p>
-            {/* Temporarily comment out LogoCarousel to isolate the issue */}
-            {/* <LogoCarousel /> */}
-            <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-8">
-                  <div className="w-24 h-8 bg-muted/30 rounded"></div>
-                </div>
-              ))}
-            </div>
+            <motion.p
+              className="text-center text-sm text-muted-foreground mb-8"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              Loved by 1,000+ Brands & Agencies
+            </motion.p>
+            <LogoCarousel />
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border/40 py-8">
+      <footer className="border-t border-border/40 py-8 relative z-10">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold">
             <Link href="/" className="text-primary hover:text-primary/90 transition-colors">

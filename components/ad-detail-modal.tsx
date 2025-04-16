@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download, Copy, FileText, ImageIcon } from "lucide-react"
+import { Download, Copy, FileText, ImageIcon, Tag, MessageSquare, ListChecks } from "lucide-react"
 import Image from "next/image"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { Badge } from "@/components/ui/badge"
@@ -28,6 +28,10 @@ interface Ad {
   createdAt: string
   type: string
   adCopy?: AdCopy | null
+  adTone?: string | null
+  adCta?: string | null
+  adOffer?: string | null
+  adPoints?: string[] | null
 }
 
 interface AdDetailModalProps {
@@ -76,7 +80,7 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="preview" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               <span>Preview</span>
@@ -88,6 +92,10 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
             <TabsTrigger value="copy" className="flex items-center gap-2" disabled={!ad.adCopy}>
               <FileText className="h-4 w-4" />
               <span>Ad Copy</span>
+            </TabsTrigger>
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              <span>Ad Details</span>
             </TabsTrigger>
           </TabsList>
 
@@ -102,6 +110,11 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
                         {ad.aspectRatio}
                       </Badge>
                       <Badge variant="secondary">{ad.type}</Badge>
+                      {ad.adTone && (
+                        <Badge variant="secondary" className="ml-2">
+                          {ad.adTone}
+                        </Badge>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -254,6 +267,78 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="details">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Ad Details</CardTitle>
+                <CardDescription>Custom elements included in this ad</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {ad.adTone && (
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <h4 className="text-sm font-medium flex items-center">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Tone
+                      </h4>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-md text-sm">{ad.adTone}</div>
+                  </div>
+                )}
+
+                {ad.adCta && (
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <h4 className="text-sm font-medium flex items-center">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Call to Action
+                      </h4>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-md text-sm">{ad.adCta}</div>
+                  </div>
+                )}
+
+                {ad.adOffer && (
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <h4 className="text-sm font-medium flex items-center">
+                        <Tag className="h-4 w-4 mr-2" />
+                        Special Offer
+                      </h4>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-md text-sm">{ad.adOffer}</div>
+                  </div>
+                )}
+
+                {ad.adPoints && ad.adPoints.length > 0 && ad.adPoints.some((point) => point) && (
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <h4 className="text-sm font-medium flex items-center">
+                        <ListChecks className="h-4 w-4 mr-2" />
+                        Key Points
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
+                      {ad.adPoints
+                        .filter((point) => point)
+                        .map((point, i) => (
+                          <div key={i} className="bg-muted/50 p-3 rounded-md text-sm">
+                            • {point}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {!ad.adTone && !ad.adCta && !ad.adOffer && (!ad.adPoints || !ad.adPoints.some((point) => point)) && (
+                  <div className="p-8 text-center">
+                    <p className="text-muted-foreground">No custom details available for this ad.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: latest
-        version: 1.3.12(zod@3.24.1)
+        version: 1.3.14(zod@3.24.1)
       '@auth/core':
         specifier: latest
         version: 0.38.0(nodemailer@6.10.1)
@@ -109,7 +109,7 @@ importers:
         version: 2.49.4
       ai:
         specifier: latest
-        version: 4.3.7(react@19.0.0)(zod@3.24.1)
+        version: 4.3.8(react@19.0.0)(zod@3.24.1)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.0.0)
@@ -126,7 +126,7 @@ importers:
         specifier: 1.0.4
         version: 1.0.4(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       date-fns:
-        specifier: 4.1.0
+        specifier: latest
         version: 4.1.0
       dotenv:
         specifier: latest
@@ -150,14 +150,14 @@ importers:
         specifier: latest
         version: 4.24.11(@auth/core@0.38.0(nodemailer@6.10.1))(next@15.2.4(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nodemailer@6.10.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-themes:
-        specifier: ^0.4.4
-        version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: latest
+        version: 0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       nodemailer:
         specifier: latest
         version: 6.10.1
       openai:
         specifier: latest
-        version: 4.94.0(ws@8.18.1)(zod@3.24.1)
+        version: 4.95.0(ws@8.18.1)(zod@3.24.1)
       react:
         specifier: ^19
         version: 19.0.0
@@ -219,8 +219,8 @@ importers:
 
 packages:
 
-  '@ai-sdk/openai@1.3.12':
-    resolution: {integrity: sha512-ueAP69p8a/ZR2ns+pmlr9h/nyV2/DAwzfnPUGZiLpXbxWnLXd2g3a7l38CuEhBydH/nOfDb/byMgpS8+bnJHTg==}
+  '@ai-sdk/openai@1.3.14':
+    resolution: {integrity: sha512-mY5tU3QOktt6Qib3GwWN43pRxW01sP1IM4M6eieUAEDRXIiFcRb5fdmL2AZ8RK8AjAgzZRPRDxk/NN0gybwjRA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -1491,8 +1491,8 @@ packages:
     resolution: {integrity: sha512-kja8j7PjmncONqaTsB8fQ+wE2mSU2DJ9D4XKoJ5PFWIdRMa6SLSN1ff4mOr4jCbfRSsxR4keIiySJU0N9T5hIQ==}
     engines: {node: '>= 8.0.0'}
 
-  ai@4.3.7:
-    resolution: {integrity: sha512-lUwpDjv4neo/OBe092LYOZtFMoMtrBDf3/bKUuM8Tc+2MCpLNgD21NDT9+Zo6Z0g1vRzz2VIurNwH/FumVFG9g==}
+  ai@4.3.8:
+    resolution: {integrity: sha512-94iuXn+/I1X6v8I+9nycuHCv3RjtI9UqALw3UfANwaxOGEPtITfImfQg4DAR+3asnJViJ/IdCpWbTyzVXjHWPQ==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -1575,8 +1575,8 @@ packages:
     resolution: {integrity: sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA==}
     engines: {node: '>= 6'}
 
-  caniuse-lite@1.0.30001713:
-    resolution: {integrity: sha512-wCIWIg+A4Xr7NfhTuHdX+/FKh3+Op3LBbSp2N5Pfx6T/LhdQy3GTyoTg48BReaW/MyMNZAkTadsBtai3ldWK0Q==}
+  caniuse-lite@1.0.30001714:
+    resolution: {integrity: sha512-mtgapdwDLSSBnCI3JokHM7oEQBLxiJKVRtg10AxM1AyeiKcM96f0Mkbqeq+1AbiCtvMcHRulAAEMu693JrSWqg==}
 
   chalk@5.4.1:
     resolution: {integrity: sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==}
@@ -2078,8 +2078,8 @@ packages:
       nodemailer:
         optional: true
 
-  next-themes@0.4.4:
-    resolution: {integrity: sha512-LDQ2qIOJF0VnuVrrMSMLrWGjRMkq+0mpgl6e0juCLqdJ+oo8Q84JRWT6Wh11VDQKkMMe+dVzDKLWs5n87T+PkQ==}
+  next-themes@0.4.6:
+    resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
     peerDependencies:
       react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
       react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
@@ -2158,8 +2158,8 @@ packages:
     resolution: {integrity: sha512-y0W+X7Ppo7oZX6eovsRkuzcSM40Bicg2JEJkDJ4irIt1wsYAP5MLSNv+QAogO8xivMffw/9OvV3um1pxXgt1uA==}
     engines: {node: ^10.13.0 || >=12.0.0}
 
-  openai@4.94.0:
-    resolution: {integrity: sha512-WVmr9HWcwfouLJ7R3UHd2A93ClezTPuJljQxkCYQAL15Sjyt+FBNoqEz5MHSdH/ebQrVyvRhFyn/bvdqtSPyIA==}
+  openai@4.95.0:
+    resolution: {integrity: sha512-tWHLTA+/HHyWlP8qg0mQLDSpI2NQLhk6zHLJL8yb59qn2pEI8rbEiAGSDPViLvi3BRDoQZIX5scaJ3xYGr2nhw==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -2658,7 +2658,7 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/openai@1.3.12(zod@3.24.1)':
+  '@ai-sdk/openai@1.3.14(zod@3.24.1)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
       '@ai-sdk/provider-utils': 2.2.7(zod@3.24.1)
@@ -3919,7 +3919,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@4.3.7(react@19.0.0)(zod@3.24.1):
+  ai@4.3.8(react@19.0.0)(zod@3.24.1):
     dependencies:
       '@ai-sdk/provider': 1.1.3
       '@ai-sdk/provider-utils': 2.2.7(zod@3.24.1)
@@ -3959,7 +3959,7 @@ snapshots:
   autoprefixer@10.4.20(postcss@8.0.0):
     dependencies:
       browserslist: 4.24.4
-      caniuse-lite: 1.0.30001713
+      caniuse-lite: 1.0.30001714
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.1.1
@@ -3982,7 +3982,7 @@ snapshots:
 
   browserslist@4.24.4:
     dependencies:
-      caniuse-lite: 1.0.30001713
+      caniuse-lite: 1.0.30001714
       electron-to-chromium: 1.5.137
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.4)
@@ -3998,7 +3998,7 @@ snapshots:
 
   camelcase-css@2.0.1: {}
 
-  caniuse-lite@1.0.30001713: {}
+  caniuse-lite@1.0.30001714: {}
 
   chalk@5.4.1: {}
 
@@ -4497,7 +4497,7 @@ snapshots:
       '@auth/core': 0.38.0(nodemailer@6.10.1)
       nodemailer: 6.10.1
 
-  next-themes@0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  next-themes@0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
@@ -4508,7 +4508,7 @@ snapshots:
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001713
+      caniuse-lite: 1.0.30001714
       postcss: 8.4.31
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
@@ -4558,7 +4558,7 @@ snapshots:
 
   oidc-token-hash@5.1.0: {}
 
-  openai@4.94.0(ws@8.18.1)(zod@3.24.1):
+  openai@4.95.0(ws@8.18.1)(zod@3.24.1):
     dependencies:
       '@types/node': 18.19.86
       '@types/node-fetch': 2.6.12

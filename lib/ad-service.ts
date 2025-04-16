@@ -1,5 +1,6 @@
 import { supabase } from "./supabase"
 
+// Update the Ad interface to include the new fields
 export interface Ad {
   id?: string
   title: string
@@ -10,8 +11,13 @@ export interface Ad {
   createdAt?: string
   type?: "image" | "video"
   adCopy?: any
+  adTone?: string
+  adCta?: string
+  adOffer?: string
+  adPoints?: string[]
 }
 
+// Update the createAd function to include the new fields
 export async function createAd(ad: Ad): Promise<Ad> {
   // Set default type to 'image' if not provided
   const adWithType = {
@@ -29,6 +35,10 @@ export async function createAd(ad: Ad): Promise<Ad> {
         user_id: adWithType.userId,
         type: adWithType.type || "image",
         ad_copy: adWithType.adCopy || null,
+        ad_tone: adWithType.adTone || null,
+        ad_cta: adWithType.adCta || null,
+        ad_offer: adWithType.adOffer || null,
+        ad_points: adWithType.adPoints || null,
       },
     ])
     .select()
@@ -40,6 +50,7 @@ export async function createAd(ad: Ad): Promise<Ad> {
   return data[0] as Ad
 }
 
+// Update the getUserAds function to map the new fields
 export async function getUserAds(userId: string) {
   const { data, error } = await supabase
     .from("ads")
@@ -60,6 +71,10 @@ export async function getUserAds(userId: string) {
     createdAt: ad.created_at,
     type: ad.type || "image",
     adCopy: ad.ad_copy || null,
+    adTone: ad.ad_tone || null,
+    adCta: ad.ad_cta || null,
+    adOffer: ad.ad_offer || null,
+    adPoints: ad.ad_points || null,
   }))
 }
 
@@ -98,7 +113,7 @@ export async function getUserUsageCountByAspectRatio(userId: string, aspectRatio
   return count || 0
 }
 
-// Add a function to get ads by type
+// Update the getUserAdsByType function to map the new fields
 export async function getUserAdsByType(userId: string, type: "image" | "video") {
   const { data, error } = await supabase
     .from("ads")
@@ -120,6 +135,10 @@ export async function getUserAdsByType(userId: string, type: "image" | "video") 
     createdAt: ad.created_at,
     type: ad.type,
     adCopy: ad.ad_copy || null,
+    adTone: ad.ad_tone || null,
+    adCta: ad.ad_cta || null,
+    adOffer: ad.ad_offer || null,
+    adPoints: ad.ad_points || null,
   }))
 }
 

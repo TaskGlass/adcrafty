@@ -1,7 +1,6 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-
 import Link from "next/link"
 import type React from "react"
 import { useState, useEffect } from "react"
@@ -12,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Loader2, Upload, Wand2, Sparkles, Info, X, Globe, CheckCircle2 } from "lucide-react"
+import { Loader2, Upload, Wand2, Sparkles, Info, X, Globe, CheckCircle2, AlertTriangle } from "lucide-react"
 import { AspectRatioSelector } from "@/components/aspect-ratio-selector"
 import { UsageCounter } from "@/components/usage-counter"
 import { PaywallModal } from "@/components/paywall-modal"
@@ -53,10 +52,24 @@ export function AdCreator() {
   const [isFetchingBrandSettings, setIsFetchingBrandSettings] = useState(false)
   const [generateAdCopy, setGenerateAdCopy] = useState(true)
   const [generatedAdCopy, setGeneratedAdCopy] = useState<any>(null)
-  const [generatedAdImage, setGeneratedAdImage] = useState<string | null>(null)
   const [showPerformanceAnalyzer, setShowPerformanceAnalyzer] = useState(false)
+  const [generatedAdImage, setGeneratedAdImage] = useState<string | null>(null)
+  const [adCopyError, setAdCopyError] = useState<string | null>(null)
   const maxFreeUsage = 3
   const maxSquareFormatUsage = 3
+
+  // Add these new state variables after the existing useState declarations
+  const [adTone, setAdTone] = useState<string>("professional")
+  const [adCta, setAdCta] = useState<string>("")
+  const [adOffer, setAdOffer] = useState<string>("")
+  const [adPoints, setAdPoints] = useState<string[]>(["", "", ""])
+
+  // Add a function to update individual bullet points
+  const updateAdPoint = (index: number, value: string) => {
+    const newPoints = [...adPoints]
+    newPoints[index] = value
+    setAdPoints(newPoints)
+  }
 
   // Fetch usage count based on user status
   useEffect(() => {
@@ -185,6 +198,10 @@ export function AdCreator() {
           aspectRatio,
           brandAnalysis, // Include brand analysis if available
           brandSettings, // Include brand settings if available
+          adTone,
+          adCta,
+          adOffer,
+          adPoints: adPoints.filter((point) => point.trim() !== ""),
         }),
       })
 
@@ -199,6 +216,10 @@ export function AdCreator() {
           body: JSON.stringify({
             prompt,
             aspectRatio,
+            adTone,
+            adCta,
+            adOffer,
+            adPoints: adPoints.filter((point) => point.trim() !== ""),
           }),
         })
 
@@ -213,6 +234,69 @@ export function AdCreator() {
     } catch (error) {
       console.error("Error in generateAdWithFallback:", error)
       throw error
+    }
+  }
+
+  // Function to safely generate ad copy with fallback
+  const generateAdCopyWithFallback = async () => {
+    setAdCopyError(null)
+
+    // Default fallback ad copy in case of errors
+    const fallbackAdCopy = {
+      primaryText: "Your compelling ad copy will appear here.",
+      headlines: ["Headline 1", "Headline 2", "Headline 3", "Headline 4", "Headline 5"],
+      descriptions: ["Description 1", "Description 2"],
+    }
+
+    try {
+      // First attempt with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+      const response = await fetch("/api/generate-ad-copy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          brandAnalysis,
+          brandSettings,
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        console.warn("Ad copy generation failed with status:", response.status)
+        setAdCopyError("Ad copy generation failed. Using default copy instead.")
+        return fallbackAdCopy
+      }
+
+      // Try to parse the JSON response
+      try {
+        const data = await response.json()
+
+        if (data.success) {
+          if (data.warning) {
+            setAdCopyError(data.warning)
+          }
+          return data.adCopy
+        } else {
+          setAdCopyError(data.error || "Failed to generate ad copy. Using default copy instead.")
+          return fallbackAdCopy
+        }
+      } catch (parseError) {
+        console.error("Error parsing ad copy response:", parseError)
+        setAdCopyError("Error parsing ad copy response. Using default copy instead.")
+        return fallbackAdCopy
+      }
+    } catch (fetchError) {
+      console.error("Error fetching ad copy:", fetchError)
+      setAdCopyError("Network error while generating ad copy. Using default copy instead.")
+      return fallbackAdCopy
     }
   }
 
@@ -265,31 +349,37 @@ export function AdCreator() {
     }
 
     setIsGenerating(true)
+    setAdCopyError(null)
 
     // Generate ad copy if enabled
     let adCopy = null
     if (generateAdCopy) {
       try {
-        const copyResponse = await fetch("/api/generate-ad-copy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            prompt,
-            brandAnalysis,
-            brandSettings,
-          }),
-        })
+        adCopy = await generateAdCopyWithFallback()
+        setGeneratedAdCopy(adCopy)
 
-        const copyData = await copyResponse.json()
-        if (copyData.success) {
-          adCopy = copyData.adCopy
-          setGeneratedAdCopy(adCopy)
+        if (adCopyError) {
+          toast({
+            title: "Ad Copy Warning",
+            description: adCopyError,
+            variant: "default",
+          })
         }
       } catch (error) {
         console.error("Error generating ad copy:", error)
         // Continue with image generation even if copy generation fails
+        toast({
+          title: "Ad Copy Generation Issue",
+          description: "There was a problem generating ad copy, but we'll continue with your image.",
+          variant: "default",
+        })
+
+        // Use fallback ad copy
+        adCopy = {
+          primaryText: "Your compelling ad copy will appear here.",
+          headlines: ["Headline 1", "Headline 2", "Headline 3", "Headline 4", "Headline 5"],
+          descriptions: ["Description 1", "Description 2"],
+        }
       }
     }
 
@@ -334,6 +424,10 @@ export function AdCreator() {
                 aspectRatio,
                 type: "image",
                 adCopy: adCopy,
+                adTone,
+                adCta,
+                adOffer,
+                adPoints: adPoints.filter((point) => point.trim() !== ""),
               })
             } else if (user?.id) {
               // Save to Supabase for authenticated users
@@ -345,6 +439,10 @@ export function AdCreator() {
                 userId: user.id,
                 type: "image",
                 adCopy: adCopy,
+                adTone,
+                adCta,
+                adOffer,
+                adPoints: adPoints.filter((point) => point.trim() !== ""),
               })
             }
           } else {
@@ -370,8 +468,6 @@ export function AdCreator() {
         setGeneratedAdImage(generatedImages[0]?.url || null)
         setShowPerformanceAnalyzer(true)
 
-        // Rest of the existing code...
-        // Update usage counts
         // Update usage counts
         if (
           isAnonymous ||
@@ -504,6 +600,13 @@ export function AdCreator() {
                     <span className="font-medium">Try before you sign up!</span> You can create up to 3 square format
                     (1:1) ads without an account.
                   </AlertDescription>
+                </Alert>
+              )}
+
+              {adCopyError && (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-yellow-700">{adCopyError}</AlertDescription>
                 </Alert>
               )}
 
@@ -821,6 +924,134 @@ export function AdCreator() {
                   ) : null}
                 </div>
 
+                <div className="space-y-6">
+                  {/* Ad Tone Selection */}
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      Ad Tone
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Select the tone of voice for your ad. This affects how your message is conveyed.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {["Professional", "Friendly", "Exciting", "Luxury", "Minimalist", "Bold"].map((tone) => (
+                        <Button
+                          key={tone}
+                          type="button"
+                          variant={adTone.toLowerCase() === tone.toLowerCase() ? "default" : "outline"}
+                          className={`h-10 ${
+                            adTone.toLowerCase() === tone.toLowerCase() ? "bg-primary text-white" : "bg-background"
+                          }`}
+                          onClick={() => setAdTone(tone.toLowerCase())}
+                        >
+                          {tone}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Call to Action Input */}
+                  <div className="space-y-3">
+                    <Label htmlFor="ad-cta" className="flex items-center gap-2">
+                      Call to Action
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              The action you want viewers to take (e.g., "Shop Now", "Learn More", "Sign Up Today")
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <Input
+                      id="ad-cta"
+                      placeholder="e.g., Shop Now, Learn More, Sign Up Today"
+                      className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                      value={adCta}
+                      onChange={(e) => setAdCta(e.target.value)}
+                      maxLength={20}
+                    />
+                    <div className="text-xs text-right text-muted-foreground">{adCta.length}/20 characters</div>
+                  </div>
+
+                  {/* Special Offer Input */}
+                  <div className="space-y-3">
+                    <Label htmlFor="ad-offer" className="flex items-center gap-2">
+                      Special Offer
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Add a promotional offer to highlight in your ad (e.g., "50% Off", "Free Shipping")
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <Input
+                      id="ad-offer"
+                      placeholder="e.g., 50% Off, Free Shipping, Limited Time Offer"
+                      className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                      value={adOffer}
+                      onChange={(e) => setAdOffer(e.target.value)}
+                      maxLength={25}
+                    />
+                    <div className="text-xs text-right text-muted-foreground">{adOffer.length}/25 characters</div>
+                  </div>
+
+                  {/* Key Points Inputs */}
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      Key Points (max 25 characters each)
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Add up to three short bullet points to highlight in your ad</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <div className="space-y-2">
+                      {[0, 1, 2].map((index) => (
+                        <div key={index} className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-muted-foreground min-w-[20px]">{index + 1}.</span>
+                            <Input
+                              placeholder={`Key point ${index + 1}`}
+                              className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                              value={adPoints[index]}
+                              onChange={(e) => updateAdPoint(index, e.target.value)}
+                              maxLength={25}
+                            />
+                          </div>
+                          <div className="text-xs text-right text-muted-foreground ml-7 mt-1">
+                            {adPoints[index].length}/25 characters
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-3">
                   <Label className="flex items-center gap-2">
                     Meta Ad Copy
@@ -915,7 +1146,7 @@ export function AdCreator() {
         >
           <AdPerformanceAnalyzer
             imageUrl={generatedAdImage}
-            adCopy={adCopy}
+            adCopy={generatedAdCopy}
             prompt={prompt}
             aspectRatio={selectedAspectRatios[0]}
           />

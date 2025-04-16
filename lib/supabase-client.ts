@@ -11,5 +11,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create Supabase client with session persistence in browser storage
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    storage: typeof window !== "undefined" ? sessionStorage : undefined,
+  },
+})

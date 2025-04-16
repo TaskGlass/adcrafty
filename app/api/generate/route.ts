@@ -6,6 +6,78 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+// Update the enhancePrompt function to include the new fields
+function enhancePrompt(
+  prompt: string,
+  aspectRatio: string,
+  brandAnalysis?: any,
+  brandSettings?: any,
+  adTone?: string,
+  adCta?: string,
+  adOffer?: string,
+  adPoints?: string[],
+) {
+  // Check if it's a Google ad size format (e.g., "300x250")
+  const isGoogleAdSize = /^\d+x\d+$/.test(aspectRatio)
+
+  let enhancedPrompt = `Create a professional advertising image for digital marketing with the following details: ${prompt}. 
+  The image should be high quality, visually appealing, and suitable for ${isGoogleAdSize ? `a Google display ad with dimensions ${aspectRatio} pixels` : `a ${aspectRatio} aspect ratio advertisement`}.
+  Make it look like a professional advertisement that would appear on ${isGoogleAdSize ? "Google Display Network" : "social media platforms"}.
+  Ensure the composition works well for this specific ${isGoogleAdSize ? "ad size" : "aspect ratio"}.`
+
+  // Add tone information if provided
+  if (adTone) {
+    enhancedPrompt += `\n\nThe tone of the ad should be ${adTone}.`
+  }
+
+  // Add CTA if provided
+  if (adCta) {
+    enhancedPrompt += `\n\nInclude a clear call-to-action button or text that says "${adCta}".`
+  }
+
+  // Add offer if provided
+  if (adOffer) {
+    enhancedPrompt += `\n\nHighlight this special offer prominently in the ad: "${adOffer}".`
+  }
+
+  // Add key points if provided
+  if (adPoints && adPoints.length > 0) {
+    enhancedPrompt += `\n\nInclude these key points as bullet points or highlighted text in the ad design:`
+    adPoints.forEach((point, index) => {
+      if (point.trim()) {
+        enhancedPrompt += `\n- ${point}`
+      }
+    })
+  }
+
+  // If brand settings are provided, incorporate them into the prompt
+  if (brandSettings) {
+    enhancedPrompt += `\n\nUse the following brand settings for this ad:
+    ${brandSettings.primaryColor ? `- Primary brand color: ${brandSettings.primaryColor}` : ""}
+    ${brandSettings.secondaryColor ? `- Secondary brand color: ${brandSettings.secondaryColor}` : ""}
+    ${brandSettings.accentColor ? `- Accent color: ${brandSettings.accentColor}` : ""}
+    ${brandSettings.brandTone ? `- Brand tone: ${brandSettings.brandTone}` : ""}
+    ${brandSettings.brandVoice ? `- Brand voice: ${brandSettings.brandVoice}` : ""}
+    `
+  }
+
+  // If brand analysis is provided, incorporate it into the prompt
+  if (brandAnalysis) {
+    enhancedPrompt += `\n\nThis ad is for a brand with the following characteristics:
+    - Brand name/website: ${brandAnalysis.title || brandAnalysis.url}
+    - Brand description: ${brandAnalysis.description}
+    - Brand keywords: ${brandAnalysis.keywords}
+    - Brand messaging: ${brandAnalysis.headings?.h1 || ""} ${brandAnalysis.headings?.h2 || ""}
+    
+    Please incorporate these brand elements into the ad design. Use a style, color scheme, and tone that matches the brand's identity.
+    If the brand has specific colors (${brandAnalysis.potentialColors?.join(", ") || "not specified"}), try to incorporate them.
+    The ad should feel like it belongs to this brand's existing marketing materials.`
+  }
+
+  return enhancedPrompt
+}
+
+// Update the POST function to extract the new fields from the request body
 export async function POST(req: Request) {
   try {
     // Check for OpenAI API key
@@ -33,14 +105,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const { prompt, aspectRatio, brandAnalysis, brandSettings } = body
+    const { prompt, aspectRatio, brandAnalysis, brandSettings, adTone, adCta, adOffer, adPoints } = body
 
     // Generate image with proper error handling
     try {
       // Use the OpenAI client directly instead of the AI SDK
       const response = await openai.images.generate({
         model: "dall-e-3",
-        prompt: enhancePrompt(prompt, aspectRatio, brandAnalysis, brandSettings),
+        prompt: enhancePrompt(prompt, aspectRatio, brandAnalysis, brandSettings, adTone, adCta, adOffer, adPoints),
         n: 1,
         size: getImageSize(aspectRatio),
       })
@@ -106,41 +178,4 @@ function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x17
     default:
       return "1024x1024"
   }
-}
-
-// Helper function to enhance the prompt for better ad generation
-function enhancePrompt(prompt: string, aspectRatio: string, brandAnalysis?: any, brandSettings?: any) {
-  // Check if it's a Google ad size format (e.g., "300x250")
-  const isGoogleAdSize = /^\d+x\d+$/.test(aspectRatio)
-
-  let enhancedPrompt = `Create a professional advertising image for digital marketing with the following details: ${prompt}. 
-  The image should be high quality, visually appealing, and suitable for ${isGoogleAdSize ? `a Google display ad with dimensions ${aspectRatio} pixels` : `a ${aspectRatio} aspect ratio advertisement`}.
-  Make it look like a professional advertisement that would appear on ${isGoogleAdSize ? "Google Display Network" : "social media platforms"}.
-  Ensure the composition works well for this specific ${isGoogleAdSize ? "ad size" : "aspect ratio"}.`
-
-  // If brand settings are provided, incorporate them into the prompt
-  if (brandSettings) {
-    enhancedPrompt += `\n\nUse the following brand settings for this ad:
-    ${brandSettings.primaryColor ? `- Primary brand color: ${brandSettings.primaryColor}` : ""}
-    ${brandSettings.secondaryColor ? `- Secondary brand color: ${brandSettings.secondaryColor}` : ""}
-    ${brandSettings.accentColor ? `- Accent color: ${brandSettings.accentColor}` : ""}
-    ${brandSettings.brandTone ? `- Brand tone: ${brandSettings.brandTone}` : ""}
-    ${brandSettings.brandVoice ? `- Brand voice: ${brandSettings.brandVoice}` : ""}
-    `
-  }
-
-  // If brand analysis is provided, incorporate it into the prompt
-  if (brandAnalysis) {
-    enhancedPrompt += `\n\nThis ad is for a brand with the following characteristics:
-    - Brand name/website: ${brandAnalysis.title || brandAnalysis.url}
-    - Brand description: ${brandAnalysis.description}
-    - Brand keywords: ${brandAnalysis.keywords}
-    - Brand messaging: ${brandAnalysis.headings?.h1 || ""} ${brandAnalysis.headings?.h2 || ""}
-    
-    Please incorporate these brand elements into the ad design. Use a style, color scheme, and tone that matches the brand's identity.
-    If the brand has specific colors (${brandAnalysis.potentialColors?.join(", ") || "not specified"}), try to incorporate them.
-    The ad should feel like it belongs to this brand's existing marketing materials.`
-  }
-
-  return enhancedPrompt
 }

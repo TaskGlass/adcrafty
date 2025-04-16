@@ -14,7 +14,17 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { AdCard } from "@/components/ad-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ImageIcon, Video } from "lucide-react"
+import { ImageIcon, Video, Search, Filter } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function AdLibrary() {
   const { user, isAnonymous, subscription } = useAuth()
@@ -169,8 +179,43 @@ export default function AdLibrary() {
     }
   }
 
+  // Get unique aspect ratios for filtering
+  const aspectRatios = [...new Set(ads.map((ad) => ad.aspectRatio))].filter(Boolean)
+
   return (
     <div className="grid gap-6">
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search ads..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 w-full"
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Filter className="h-4 w-4" />
+              <span>{selectedFilter || "Filter"}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Filter by aspect ratio</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setSelectedFilter(null)}>All aspect ratios</DropdownMenuItem>
+              {aspectRatios.map((ratio) => (
+                <DropdownMenuItem key={ratio} onClick={() => setSelectedFilter(ratio as string)}>
+                  {ratio}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <Tabs defaultValue="image" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="image" className="flex items-center gap-2">

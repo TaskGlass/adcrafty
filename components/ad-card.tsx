@@ -1,211 +1,230 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Download, Video, Trash, FileText, BarChart2, ExternalLink } from "lucide-react"
-import Image from "next/image"
-import { AdPerformanceAnalyzer } from "@/components/ad-performance-analyzer"
+import { Download, Trash2, Copy, MoreHorizontal, ExternalLink } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
+import { deleteAd } from "@/lib/ad-service"
 import { AdDetailModal } from "@/components/ad-detail-modal"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { motion } from "framer-motion"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { format } from "date-fns"
 
 interface AdCardProps {
-  ad: any
-  onDelete: () => void
-  onDownload: (ad: any, size?: string) => void
-  isVideo?: boolean
-  canDownload?: boolean
-  isCheckingDownloadPermission?: boolean
+  id?: string
+  title: string
+  prompt: string
+  imageUrl: string
+  aspectRatio: string
+  createdAt?: string
+  onDelete?: (id: string) => void
+  type?: "image" | "video"
+  adCopy?: any
+  adTone?: string
+  adCta?: string
+  adOffer?: string
+  adPoints?: string[]
 }
 
 export function AdCard({
-  ad,
+  id,
+  title,
+  prompt,
+  imageUrl,
+  aspectRatio,
+  createdAt,
   onDelete,
-  onDownload,
-  isVideo = false,
-  canDownload = true,
-  isCheckingDownloadPermission = false,
+  type = "image",
+  adCopy,
+  adTone,
+  adCta,
+  adOffer,
+  adPoints,
 }: AdCardProps) {
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showAnalyzer, setShowAnalyzer] = useState(false)
-  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
-  // Ensure ad has all required properties
-  const safeAd = {
-    id: ad.id || "",
-    title: ad.title || "Untitled Ad",
-    prompt: ad.prompt || "",
-    imageUrl: ad.imageUrl || "/placeholder.svg",
-    aspectRatio: ad.aspectRatio || "1:1",
-    createdAt: ad.createdAt || new Date().toISOString(),
-    type: ad.type || "image",
-    adCopy: ad.adCopy || null,
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${title.replace(/\s+/g, "-").toLowerCase()}-${aspectRatio.replace(":", "x")}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Download started",
+        description: "Your ad image is being downloaded.",
+      })
+    } catch (error) {
+      console.error("Error downloading image:", error)
+      toast({
+        title: "Download failed",
+        description: "Failed to download the image. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  // Format the prompt for better readability (truncated version for card)
-  const truncatedPrompt = safeAd.prompt.length > 100 ? safeAd.prompt.substring(0, 100) + "..." : safeAd.prompt
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(prompt)
+    toast({
+      title: "Prompt copied",
+      description: "The ad prompt has been copied to your clipboard.",
+    })
+  }
+
+  const handleDelete = async () => {
+    if (!id) return
+
+    try {
+      await deleteAd(id)
+      if (onDelete) {
+        onDelete(id)
+      }
+      toast({
+        title: "Ad deleted",
+        description: "The ad has been deleted successfully.",
+      })
+    } catch (error) {
+      console.error("Error deleting ad:", error)
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete the ad. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleOpenModal = () => {
+    setShowModal(true)
+  }
+
+  const formattedDate = createdAt ? format(new Date(createdAt), "MMM d, yyyy") : "Recently created"
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow duration-200">
-        <CardContent className="p-4">
-          <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-            <div className="grid gap-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{safeAd.title}</h3>
-                <Badge variant="outline" className="ml-auto">
-                  {safeAd.aspectRatio}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        whileHover={{ scale: 1.02 }}
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        className="h-full"
+      >
+        <Card className="overflow-hidden h-full border border-border/40 hover:border-primary/30 transition-all duration-300 bg-card">
+          <CardContent className="p-0 h-full flex flex-col">
+            <div className="p-4 pb-2 flex-grow space-y-2">
+              <div className="flex justify-between items-start">
+                <h3
+                  className="font-medium text-lg cursor-pointer hover:text-primary transition-colors duration-200"
+                  onClick={handleOpenModal}
+                >
+                  {title}
+                </h3>
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {aspectRatio}
                 </Badge>
-                {isVideo && (
-                  <Badge variant="secondary">
-                    <Video className="h-3 w-3 mr-1" />
-                    Video
-                  </Badge>
-                )}
-                {safeAd.adCopy && (
-                  <Badge variant="secondary">
-                    <FileText className="h-3 w-3 mr-1" />
-                    Copy
-                  </Badge>
-                )}
               </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{truncatedPrompt}</p>
-              <div className="text-xs text-muted-foreground">
-                Created on {new Date(safeAd.createdAt).toLocaleDateString()}
+              <p className="text-sm text-muted-foreground line-clamp-2">{prompt}</p>
+              <p className="text-xs text-muted-foreground mt-1">{formattedDate}</p>
+            </div>
+
+            <div className="relative cursor-pointer group" onClick={handleOpenModal}>
+              <div className="aspect-square overflow-hidden bg-muted/30 relative">
+                <img
+                  src={imageUrl || "/placeholder.svg"}
+                  alt={title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center">
+                  <Button variant="secondary" size="sm" className="mb-4 bg-background/80 backdrop-blur-sm">
+                    View Details
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div
-                className="relative aspect-square h-20 overflow-hidden rounded-md cursor-pointer border hover:border-primary/50"
-                onClick={() => setShowDetailModal(true)}
-              >
-                <AspectRatio ratio={getAspectRatioValue(safeAd.aspectRatio)}>
-                  <Image
-                    src={safeAd.imageUrl || "/placeholder.svg"}
-                    alt={safeAd.title}
-                    fill
-                    className="object-cover"
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      const target = e.target as HTMLImageElement
-                      target.src = "/placeholder.svg"
-                    }}
-                  />
-                  {isVideo && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <Video className="h-8 w-8 text-white" />
-                    </div>
+
+            <div className="p-3 flex justify-between items-center border-t border-border/30">
+              <div className="flex space-x-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownload}>
+                        <Download className="h-4 w-4" />
+                        <span className="sr-only">Download</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Download</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyPrompt}>
+                        <Copy className="h-4 w-4" />
+                        <span className="sr-only">Copy prompt</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy prompt</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">More options</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleOpenModal}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View details
+                  </DropdownMenuItem>
+                  {id && onDelete && (
+                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
                   )}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/20 transition-opacity">
-                    <ExternalLink className="h-6 w-6 text-white" />
-                  </div>
-                </AspectRatio>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDownload(ad)}
-                  title="Download"
-                  disabled={!canDownload || isCheckingDownloadPermission}
-                >
-                  <Download className="h-4 w-4" />
-                  <span className="sr-only">Download</span>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => setShowDeleteConfirm(true)} title="Delete">
-                  <Trash className="h-4 w-4" />
-                  <span className="sr-only">Delete</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowAnalyzer(!showAnalyzer)}
-                  title="Analyze Performance"
-                >
-                  <BarChart2 className="h-4 w-4" />
-                  <span className="sr-only">Analyze Performance</span>
-                </Button>
-              </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-          {showAnalyzer && (
-            <div className="mt-4 pt-4 border-t border-border/40">
-              <AdPerformanceAnalyzer
-                imageUrl={safeAd.imageUrl}
-                adCopy={safeAd.adCopy}
-                prompt={safeAd.prompt}
-                aspectRatio={safeAd.aspectRatio}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onDelete()
-                setShowDeleteConfirm(false)
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Ad Detail Modal */}
       <AdDetailModal
-        ad={safeAd}
-        isOpen={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
-        onDownload={onDownload}
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={title}
+        prompt={prompt}
+        imageUrl={imageUrl}
+        aspectRatio={aspectRatio}
+        createdAt={createdAt}
+        type={type}
+        adCopy={adCopy}
+        adTone={adTone}
+        adCta={adCta}
+        adOffer={adOffer}
+        adPoints={adPoints}
       />
     </>
   )
-}
-
-// Helper function to convert aspect ratio string to numeric value
-function getAspectRatioValue(aspectRatio: string): number {
-  // Check if it's a Google ad size format (e.g., "300x250")
-  if (/^\d+x\d+$/.test(aspectRatio)) {
-    const [width, height] = aspectRatio.split("x").map(Number)
-    return width / height
-  }
-
-  // For standard aspect ratios
-  switch (aspectRatio) {
-    case "1:1":
-      return 1
-    case "4:5":
-      return 4 / 5
-    case "9:16":
-      return 9 / 16
-    case "16:9":
-      return 16 / 9
-    case "1.91:1":
-      return 1.91
-    default:
-      return 1
-  }
 }

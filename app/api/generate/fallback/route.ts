@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { aspectRatio } = body
+    const { aspectRatio, prompt, negative_prompt, num_inference_steps, guidance_scale } = body
 
     // Create a placeholder image URL based on the aspect ratio
     let width = 800
@@ -50,6 +50,10 @@ export async function POST(req: Request) {
       imageUrl: placeholderUrl,
       aspectRatio,
       isFallback: true,
+      prompt,
+      negative_prompt,
+      num_inference_steps,
+      guidance_scale,
     })
   } catch (error) {
     console.error("Error in fallback route:", error)

@@ -1,3 +1,4 @@
+// Update the AnonymousAd interface to include the new fields
 export interface AnonymousAd {
   title: string
   prompt: string
@@ -7,6 +8,10 @@ export interface AnonymousAd {
   id: string
   createdAt: string
   adCopy?: any
+  adTone?: string
+  adCta?: string
+  adOffer?: string
+  adPoints?: string[]
 }
 
 const STORAGE_KEY = "anonymousAds"
