@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Loader2, Upload, Wand2, Sparkles, Info, X, Globe, CheckCircle2, AlertTriangle } from "lucide-react"
+import { Loader2, Upload, Sparkles, Info, X, Globe, CheckCircle2, AlertTriangle, ImageIcon } from "lucide-react"
 import { AspectRatioSelector } from "@/components/aspect-ratio-selector"
 import { UsageCounter } from "@/components/usage-counter"
 import { PaywallModal } from "@/components/paywall-modal"
@@ -28,6 +28,7 @@ import { getBrandSettings } from "@/lib/brand-settings-service"
 import type { BrandSettings } from "@/lib/brand-settings-service"
 import { Switch } from "@/components/ui/switch"
 import { AdPerformanceAnalyzer } from "@/components/ad-performance-analyzer"
+import { Progress } from "@/components/ui/progress"
 
 const supabaseClient = createClientComponentClient()
 
@@ -55,6 +56,11 @@ export function AdCreator() {
   const [showPerformanceAnalyzer, setShowPerformanceAnalyzer] = useState(false)
   const [generatedAdImage, setGeneratedAdImage] = useState<string | null>(null)
   const [adCopyError, setAdCopyError] = useState<string | null>(null)
+  const [generationError, setGenerationError] = useState<string | null>(null)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [currentAspectRatio, setCurrentAspectRatio] = useState<string | null>(null)
+  const [generationStatus, setGenerationStatus] = useState<string>("idle")
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null)
   const maxFreeUsage = 3
   const maxSquareFormatUsage = 3
 
@@ -70,6 +76,15 @@ export function AdCreator() {
     newPoints[index] = value
     setAdPoints(newPoints)
   }
+
+  // Clear progress timer on unmount
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current)
+      }
+    }
+  }, [])
 
   // Fetch usage count based on user status
   useEffect(() => {
@@ -185,61 +200,183 @@ export function AdCreator() {
     }
   }
 
-  const generateAdWithFallback = async (prompt: string, aspectRatio: string) => {
-    try {
-      // First try the main API endpoint
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          aspectRatio,
-          brandAnalysis, // Include brand analysis if available
-          brandSettings, // Include brand settings if available
-          adTone,
-          adCta,
-          adOffer,
-          adPoints: adPoints.filter((point) => point.trim() !== ""),
-        }),
-      })
+  // Function to simulate progress even if the actual API call is taking time
+  const startProgressSimulation = () => {
+    // Clear any existing timer
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current)
+    }
 
-      // If the main API fails, use the fallback
-      if (!response.ok) {
-        console.warn("Main API failed, using fallback")
-        const fallbackResponse = await fetch("/api/generate/fallback", {
+    // Start at current progress
+    let simulatedProgress = generationProgress
+
+    // Create a timer that increments progress
+    progressTimerRef.current = setInterval(() => {
+      // Increment progress but never reach 100%
+      if (simulatedProgress < 95) {
+        simulatedProgress += Math.random() * 2
+        setGenerationProgress(Math.min(95, simulatedProgress))
+      }
+    }, 500)
+  }
+
+  // Stop the progress simulation
+  const stopProgressSimulation = () => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current)
+      progressTimerRef.current = null
+    }
+  }
+
+  // Improved function to generate an ad with better error handling and retries
+  const generateAdWithFallback = async (prompt: string, aspectRatio: string): Promise<any> => {
+    // Reset any previous errors
+    setGenerationError(null)
+    setCurrentAspectRatio(aspectRatio)
+    setGenerationStatus(`Generating ${aspectRatio} format...`)
+
+    // Start progress simulation
+    startProgressSimulation()
+
+    // Create the request payload
+    const payload = {
+      prompt,
+      aspectRatio,
+      brandAnalysis, // Include brand analysis if available
+      brandSettings, // Include brand settings if available
+      adTone,
+      adCta,
+      adOffer,
+      adPoints: adPoints.filter((point) => point.trim() !== ""),
+    }
+
+    console.log("Generating ad with payload:", JSON.stringify(payload, null, 2))
+
+    // Try up to 3 times
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Attempt ${attempt} to generate ad image`)
+        setGenerationStatus(`Generating ${aspectRatio} format (attempt ${attempt}/3)...`)
+
+        // Set a timeout for the fetch request
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+        const response = await fetch("/api/generate", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            prompt,
-            aspectRatio,
-            adTone,
-            adCta,
-            adOffer,
-            adPoints: adPoints.filter((point) => point.trim() !== ""),
-          }),
+          body: JSON.stringify(payload),
+          signal: controller.signal,
         })
 
-        if (!fallbackResponse.ok) {
-          throw new Error("Both main and fallback APIs failed")
+        // Clear the timeout
+        clearTimeout(timeoutId)
+
+        // Check if the request was successful
+        if (!response.ok) {
+          console.warn(`API response not OK: ${response.status}`)
+          throw new Error(`API returned status ${response.status}`)
         }
 
-        return await fallbackResponse.json()
-      }
+        // Try to parse the response as JSON
+        let data
+        try {
+          data = await response.json()
+          console.log("API response:", JSON.stringify(data, null, 2))
+        } catch (parseError) {
+          console.error("Failed to parse API response:", parseError)
+          throw new Error("Invalid response format")
+        }
 
-      return await response.json()
-    } catch (error) {
-      console.error("Error in generateAdWithFallback:", error)
-      throw error
+        // Check if the response indicates success
+        if (data.success) {
+          // Stop progress simulation
+          stopProgressSimulation()
+
+          // If it's a fallback image, show a warning
+          if (data.isFallback) {
+            setGenerationError(
+              "Using a placeholder image because the AI image generation service is currently unavailable.",
+            )
+          }
+
+          // Set the preview image
+          setPreviewImage(data.imageUrl)
+          setGenerationStatus("Generation complete!")
+
+          return data
+        } else {
+          // If the API returned an error, throw it
+          throw new Error(data.error || "Unknown error")
+        }
+      } catch (error: any) {
+        console.error(`Attempt ${attempt} failed:`, error)
+        setGenerationStatus(`Attempt ${attempt} failed, ${attempt < 3 ? "retrying..." : "trying fallback..."}`)
+
+        // If this was the last attempt, try the fallback API
+        if (attempt === 3) {
+          console.log("All attempts failed, trying fallback API")
+          try {
+            setGenerationStatus("Using fallback image generator...")
+
+            const fallbackResponse = await fetch("/api/generate/fallback", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            })
+
+            if (!fallbackResponse.ok) {
+              throw new Error(`Fallback API returned status ${fallbackResponse.status}`)
+            }
+
+            const fallbackData = await fallbackResponse.json()
+            console.log("Fallback API response:", JSON.stringify(fallbackData, null, 2))
+
+            // Stop progress simulation
+            stopProgressSimulation()
+
+            // Set the error message but continue with the fallback image
+            setGenerationError(
+              "Using a placeholder image because the AI image generation service is currently unavailable.",
+            )
+
+            // Set the preview image
+            setPreviewImage(fallbackData.imageUrl)
+            setGenerationStatus("Using fallback image")
+
+            return fallbackData
+          } catch (fallbackError) {
+            console.error("Fallback API failed:", fallbackError)
+
+            // Stop progress simulation
+            stopProgressSimulation()
+
+            setGenerationStatus("Generation failed")
+            throw new Error("Both main and fallback APIs failed")
+          }
+        }
+
+        // If this wasn't the last attempt, wait before retrying
+        if (attempt < 3) {
+          console.log(`Waiting before retry ${attempt + 1}...`)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)) // Exponential backoff
+        }
+      }
     }
+
+    // This should never be reached due to the throw in the last attempt, but TypeScript needs it
+    stopProgressSimulation()
+    throw new Error("Failed to generate image after multiple attempts")
   }
 
   // Function to safely generate ad copy with fallback
   const generateAdCopyWithFallback = async () => {
     setAdCopyError(null)
+    setGenerationStatus("Generating ad copy...")
 
     // Default fallback ad copy in case of errors
     const fallbackAdCopy = {
@@ -251,7 +388,7 @@ export function AdCreator() {
     try {
       // First attempt with timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
 
       const response = await fetch("/api/generate-ad-copy", {
         method: "POST",
@@ -348,8 +485,13 @@ export function AdCreator() {
       return
     }
 
+    // Reset states
     setIsGenerating(true)
     setAdCopyError(null)
+    setGenerationError(null)
+    setPreviewImage(null)
+    setGenerationProgress(0)
+    setGenerationStatus("Starting generation...")
 
     // Generate ad copy if enabled
     let adCopy = null
@@ -383,20 +525,19 @@ export function AdCreator() {
       }
     }
 
-    setGenerationProgress(0)
-
     try {
       // Generate images for each selected aspect ratio
       const totalRatios = selectedAspectRatios.length
       const generatedImages = []
       let successCount = 0
+      let failureCount = 0
 
       for (let i = 0; i < totalRatios; i++) {
         const aspectRatio = selectedAspectRatios[i]
         setGenerationProgress(Math.round(((i + 1) / totalRatios) * 100))
 
         try {
-          // Use the generateAdWithFallback function
+          // Use the improved generateAdWithFallback function
           const data = await generateAdWithFallback(prompt, aspectRatio)
 
           if (data.success) {
@@ -405,14 +546,6 @@ export function AdCreator() {
               url: data.imageUrl,
               aspectRatio,
             })
-
-            // If it's a fallback image, show a warning
-            if (data.isFallback) {
-              toast({
-                title: "Using placeholder image",
-                description: "The AI image generation service is currently unavailable. Using a placeholder instead.",
-              })
-            }
 
             // Save the ad based on user status
             if (isAnonymous) {
@@ -446,6 +579,7 @@ export function AdCreator() {
               })
             }
           } else {
+            failureCount++
             console.error("Error from API:", data.error)
             toast({
               title: "Error generating image",
@@ -454,6 +588,7 @@ export function AdCreator() {
             })
           }
         } catch (error: any) {
+          failureCount++
           console.error("Error generating image:", error)
           toast({
             title: "Error generating image",
@@ -462,6 +597,10 @@ export function AdCreator() {
           })
         }
       }
+
+      // Ensure progress reaches 100% at the end
+      setGenerationProgress(100)
+      setGenerationStatus("Generation complete!")
 
       if (successCount > 0) {
         // Show the ad performance analyzer for the first generated image
@@ -505,6 +644,8 @@ export function AdCreator() {
         variant: "destructive",
       })
     } finally {
+      // Stop any running progress simulation
+      stopProgressSimulation()
       setIsGenerating(false)
     }
   }
@@ -608,6 +749,40 @@ export function AdCreator() {
                   <AlertTriangle className="h-4 w-4 text-yellow-600" />
                   <AlertDescription className="text-yellow-700">{adCopyError}</AlertDescription>
                 </Alert>
+              )}
+
+              {generationError && (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-yellow-700">{generationError}</AlertDescription>
+                </Alert>
+              )}
+
+              {isGenerating && (
+                <div className="bg-background border border-border/40 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="font-medium">{generationStatus}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">{generationProgress}%</span>
+                  </div>
+                  <Progress value={generationProgress} className="h-2" />
+                  {currentAspectRatio && (
+                    <p className="text-xs text-muted-foreground">Currently processing: {currentAspectRatio} format</p>
+                  )}
+                </div>
+              )}
+
+              {previewImage && (
+                <div className="relative rounded-lg overflow-hidden border border-border/40">
+                  <img
+                    src={previewImage || "/placeholder.svg"}
+                    alt="Preview of generated ad"
+                    className="w-full h-auto object-contain"
+                  />
+                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">Preview</div>
+                </div>
               )}
 
               <div className="space-y-6 pt-4">
@@ -1091,7 +1266,7 @@ export function AdCreator() {
                     {isGenerating ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Generating... {generationProgress > 0 ? `${generationProgress}%` : ""}
+                        {generationStatus}
                         <div
                           className="absolute bottom-0 left-0 h-1 bg-white/30"
                           style={{ width: `${generationProgress}%`, transition: "width 0.3s ease-in-out" }}
@@ -1099,7 +1274,7 @@ export function AdCreator() {
                       </>
                     ) : (
                       <>
-                        <Wand2 className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
+                        <ImageIcon className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
                         Generate {brandAnalysis ? "Brand-Tailored" : ""} Image Ad
                         <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 -translate-x-full group-hover:animate-shimmer" />
                       </>
