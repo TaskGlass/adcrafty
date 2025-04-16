@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { AdCard } from "@/components/ad-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ImageIcon, Video, Search, Filter } from "lucide-react"
+import { ImageIcon, Video, Search, Filter, Plus, RefreshCw, Grid3X3, Grid2X2, LayoutList } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -25,6 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AdDetailModal } from "@/components/ad-detail-modal"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function AdLibrary() {
   const { user, isAnonymous, subscription } = useAuth()
@@ -35,35 +37,45 @@ export default function AdLibrary() {
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null)
   const [canDownload, setCanDownload] = useState(true)
   const [isCheckingDownloadPermission, setIsCheckingDownloadPermission] = useState(false)
+  const [viewMode, setViewMode] = useState<"grid" | "compact" | "list">("grid")
+  const [selectedAd, setSelectedAd] = useState<any | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    async function fetchAds() {
-      setIsLoading(true)
-      try {
-        if (isAnonymous) {
-          // Get ads from localStorage for anonymous users
-          const anonymousAds = getAnonymousAds()
-          setAds(anonymousAds)
-          setFilteredAds(anonymousAds)
-        } else if (user?.id) {
-          // Get ads from Supabase for authenticated users
-          const userAds = await getUserAds(user.id)
-          setAds(userAds)
-          setFilteredAds(userAds)
-        }
-      } catch (error) {
-        console.error("Error fetching ads:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load your ads. Please try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
+  const fetchAds = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true)
+    try {
+      if (isAnonymous) {
+        // Get ads from localStorage for anonymous users
+        const anonymousAds = getAnonymousAds()
+        setAds(anonymousAds)
+        setFilteredAds(anonymousAds)
+      } else if (user?.id) {
+        // Get ads from Supabase for authenticated users
+        const userAds = await getUserAds(user.id)
+        setAds(userAds)
+        setFilteredAds(userAds)
       }
+    } catch (error) {
+      console.error("Error fetching ads:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load your ads. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      if (showLoading) setIsLoading(false)
+      setIsRefreshing(false)
     }
+  }
 
+  const refreshAds = () => {
+    setIsRefreshing(true)
+    fetchAds(false)
+  }
+
+  useEffect(() => {
     fetchAds()
   }, [user, isAnonymous])
 
@@ -179,41 +191,84 @@ export default function AdLibrary() {
     }
   }
 
+  const handleViewDetails = (ad: any) => {
+    setSelectedAd(ad)
+    setIsDetailModalOpen(true)
+  }
+
   // Get unique aspect ratios for filtering
   const aspectRatios = [...new Set(ads.map((ad) => ad.aspectRatio))].filter(Boolean)
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search ads..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 w-full"
-          />
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="default" className="flex items-center gap-2" onClick={() => router.push("/dashboard")}>
+            <Plus className="h-4 w-4" />
+            <span>Create New Ad</span>
+          </Button>
+          <Button variant="outline" size="icon" onClick={refreshAds} disabled={isRefreshing} className="relative">
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span className="sr-only">Refresh</span>
+          </Button>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              <span>{selectedFilter || "Filter"}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Filter by aspect ratio</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setSelectedFilter(null)}>All aspect ratios</DropdownMenuItem>
-              {aspectRatios.map((ratio) => (
-                <DropdownMenuItem key={ratio} onClick={() => setSelectedFilter(ratio as string)}>
-                  {ratio}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search ads..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full"
+            />
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                <span className="hidden sm:inline">{selectedFilter || "Filter"}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Filter by aspect ratio</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => setSelectedFilter(null)}>All aspect ratios</DropdownMenuItem>
+                {aspectRatios.map((ratio) => (
+                  <DropdownMenuItem key={ratio} onClick={() => setSelectedFilter(ratio as string)}>
+                    {ratio}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                {viewMode === "grid" && <Grid3X3 className="h-4 w-4" />}
+                {viewMode === "compact" && <Grid2X2 className="h-4 w-4" />}
+                {viewMode === "list" && <LayoutList className="h-4 w-4" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setViewMode("grid")}>
+                <Grid3X3 className="h-4 w-4 mr-2" />
+                Grid View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setViewMode("compact")}>
+                <Grid2X2 className="h-4 w-4 mr-2" />
+                Compact View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setViewMode("list")}>
+                <LayoutList className="h-4 w-4 mr-2" />
+                List View
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <Tabs defaultValue="image" className="w-full">
@@ -230,26 +285,57 @@ export default function AdLibrary() {
 
         <TabsContent value="image">
           {isLoading ? (
-            <div className="grid gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <AdCardSkeleton key={i} />
+            <div
+              className={`grid gap-4 ${
+                viewMode === "grid"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : viewMode === "compact"
+                    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                    : "grid-cols-1"
+              }`}
+            >
+              {Array.from({ length: viewMode === "grid" ? 6 : viewMode === "compact" ? 8 : 4 }).map((_, i) => (
+                <AdCardSkeleton key={i} viewMode={viewMode} />
               ))}
             </div>
           ) : filteredAds.filter((ad) => ad.type === "image" || !ad.type).length > 0 ? (
-            <div className="grid gap-4">
-              {filteredAds
-                .filter((ad) => ad.type === "image" || !ad.type)
-                .map((ad) => (
-                  <AdCard
-                    key={ad.id || `anonymous-${ad.title}`}
-                    ad={ad}
-                    onDelete={() => handleDelete(ad.id || "")}
-                    onDownload={handleDownload}
-                    canDownload={canDownload}
-                    isCheckingDownloadPermission={isCheckingDownloadPermission}
-                  />
-                ))}
-            </div>
+            <AnimatePresence>
+              <motion.div
+                className={`grid gap-4 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    : viewMode === "compact"
+                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                      : "grid-cols-1"
+                }`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {filteredAds
+                  .filter((ad) => ad.type === "image" || !ad.type)
+                  .map((ad) => (
+                    <motion.div
+                      key={ad.id || `anonymous-${ad.title}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <AdCard
+                        ad={ad}
+                        onDelete={() => handleDelete(ad.id || "")}
+                        onDownload={handleDownload}
+                        onViewDetails={() => handleViewDetails(ad)}
+                        canDownload={canDownload}
+                        isCheckingDownloadPermission={isCheckingDownloadPermission}
+                        viewMode={viewMode}
+                      />
+                    </motion.div>
+                  ))}
+              </motion.div>
+            </AnimatePresence>
           ) : (
             <EmptyState
               title="No image ads yet"
@@ -261,27 +347,58 @@ export default function AdLibrary() {
 
         <TabsContent value="video">
           {isLoading ? (
-            <div className="grid gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <AdCardSkeleton key={i} />
+            <div
+              className={`grid gap-4 ${
+                viewMode === "grid"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : viewMode === "compact"
+                    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                    : "grid-cols-1"
+              }`}
+            >
+              {Array.from({ length: viewMode === "grid" ? 6 : viewMode === "compact" ? 8 : 4 }).map((_, i) => (
+                <AdCardSkeleton key={i} viewMode={viewMode} />
               ))}
             </div>
           ) : filteredAds.filter((ad) => ad.type === "video").length > 0 ? (
-            <div className="grid gap-4">
-              {filteredAds
-                .filter((ad) => ad.type === "video")
-                .map((ad) => (
-                  <AdCard
-                    key={ad.id || `anonymous-${ad.title}`}
-                    ad={ad}
-                    onDelete={() => handleDelete(ad.id || "")}
-                    onDownload={handleDownload}
-                    isVideo={true}
-                    canDownload={canDownload}
-                    isCheckingDownloadPermission={isCheckingDownloadPermission}
-                  />
-                ))}
-            </div>
+            <AnimatePresence>
+              <motion.div
+                className={`grid gap-4 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    : viewMode === "compact"
+                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                      : "grid-cols-1"
+                }`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {filteredAds
+                  .filter((ad) => ad.type === "video")
+                  .map((ad) => (
+                    <motion.div
+                      key={ad.id || `anonymous-${ad.title}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <AdCard
+                        ad={ad}
+                        onDelete={() => handleDelete(ad.id || "")}
+                        onDownload={handleDownload}
+                        onViewDetails={() => handleViewDetails(ad)}
+                        isVideo={true}
+                        canDownload={canDownload}
+                        isCheckingDownloadPermission={isCheckingDownloadPermission}
+                        viewMode={viewMode}
+                      />
+                    </motion.div>
+                  ))}
+              </motion.div>
+            </AnimatePresence>
           ) : (
             <EmptyState
               title="No video ads yet"
@@ -291,15 +408,57 @@ export default function AdLibrary() {
           )}
         </TabsContent>
       </Tabs>
+
+      {selectedAd && (
+        <AdDetailModal
+          ad={selectedAd}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          onDownload={handleDownload}
+        />
+      )}
     </div>
   )
 }
 
-function AdCardSkeleton() {
+function AdCardSkeleton({ viewMode = "grid" }: { viewMode?: "grid" | "compact" | "list" }) {
+  if (viewMode === "compact") {
+    return (
+      <Card className="overflow-hidden">
+        <div className="aspect-square bg-muted animate-pulse"></div>
+        <CardContent className="p-3">
+          <Skeleton className="h-4 w-3/4 mb-2" />
+          <Skeleton className="h-3 w-1/2" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (viewMode === "list") {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-md flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Default grid view
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+        <div className="grid gap-4">
           <div className="grid gap-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-5 w-32" />
@@ -308,13 +467,13 @@ function AdCardSkeleton() {
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-4 w-24" />
           </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-20 w-20 rounded-md" />
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="aspect-square rounded-md" />
+          <div className="flex justify-between">
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-8 rounded-full" />
             </div>
+            <Skeleton className="h-8 w-8 rounded-full" />
           </div>
         </div>
       </CardContent>

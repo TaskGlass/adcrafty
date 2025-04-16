@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
-// Initialize the OpenAI client
+// Initialize the OpenAI client with error handling
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
@@ -92,8 +92,22 @@ export async function POST(req: Request) {
       )
     }
 
-    // Parse request body
-    const body = await req.json().catch(() => null)
+    // Parse request body with better error handling
+    let body
+    try {
+      body = await req.json()
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request format",
+          imageUrl: `/placeholder.svg?height=800&width=800&text=${encodeURIComponent("Invalid request format")}`,
+        },
+        { status: 200 },
+      )
+    }
+
     if (!body || !body.prompt || !body.aspectRatio) {
       return NextResponse.json(
         {
@@ -107,15 +121,37 @@ export async function POST(req: Request) {
 
     const { prompt, aspectRatio, brandAnalysis, brandSettings, adTone, adCta, adOffer, adPoints } = body
 
-    // Generate image with proper error handling
+    // Set up a timeout for the OpenAI request
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
     try {
-      // Use the OpenAI client directly instead of the AI SDK
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: enhancePrompt(prompt, aspectRatio, brandAnalysis, brandSettings, adTone, adCta, adOffer, adPoints),
-        n: 1,
-        size: getImageSize(aspectRatio),
-      })
+      // Generate image with proper error handling
+      const enhancedPrompt = enhancePrompt(
+        prompt,
+        aspectRatio,
+        brandAnalysis,
+        brandSettings,
+        adTone,
+        adCta,
+        adOffer,
+        adPoints,
+      )
+      console.log("Sending prompt to OpenAI:", enhancedPrompt.substring(0, 100) + "...")
+
+      // Use the OpenAI client with the abort controller signal
+      const response = await openai.images.generate(
+        {
+          model: "dall-e-3",
+          prompt: enhancedPrompt,
+          n: 1,
+          size: getImageSize(aspectRatio),
+        },
+        { signal: controller.signal },
+      )
+
+      // Clear the timeout since the request completed
+      clearTimeout(timeoutId)
 
       // Extract the image URL from the response
       const imageUrl = response.data[0]?.url
@@ -130,7 +166,23 @@ export async function POST(req: Request) {
         aspectRatio,
       })
     } catch (imageError: any) {
+      // Clear the timeout if there was an error
+      clearTimeout(timeoutId)
+
       console.error("OpenAI API error:", imageError)
+
+      // Check if it's an abort error (timeout)
+      if (imageError.name === "AbortError") {
+        console.log("Request timed out, using fallback")
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Request timed out",
+            imageUrl: `/placeholder.svg?height=800&width=800&text=${encodeURIComponent("Request timed out")}`,
+          },
+          { status: 200 },
+        )
+      }
 
       // Return a valid JSON response with error details
       return NextResponse.json(
@@ -158,11 +210,11 @@ export async function POST(req: Request) {
 }
 
 // Helper function to determine image size based on aspect ratio
-function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x1792" | string {
+function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x1792" {
   // Check if it's a Google ad size format (e.g., "300x250")
   if (/^\d+x\d+$/.test(aspectRatio)) {
-    // For Google ad sizes, we'll use the exact dimensions
-    return aspectRatio
+    // For Google ad sizes, we'll use square format as DALL-E doesn't support arbitrary dimensions
+    return "1024x1024"
   }
 
   // For standard aspect ratios

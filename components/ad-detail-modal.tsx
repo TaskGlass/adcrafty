@@ -20,13 +20,13 @@ interface AdCopy {
 
 // Define the ad type
 interface Ad {
-  id: string
+  id?: string
   title: string
   prompt: string
   imageUrl: string
   aspectRatio: string
-  createdAt: string
-  type: string
+  createdAt?: string
+  type?: string
   adCopy?: AdCopy | null
   adTone?: string | null
   adCta?: string | null
@@ -38,7 +38,7 @@ interface AdDetailModalProps {
   ad: Ad | null
   isOpen: boolean
   onClose: () => void
-  onDownload: (ad: Ad, size?: string) => void
+  onDownload?: (ad: Ad, size?: string) => void
 }
 
 // Define common ad sizes for different aspect ratios
@@ -71,12 +71,20 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
     })
   }
 
+  const handleDownload = (size?: string) => {
+    if (onDownload) {
+      onDownload(ad, size)
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{ad.title}</DialogTitle>
-          <DialogDescription>Created on {new Date(ad.createdAt).toLocaleDateString()}</DialogDescription>
+          <DialogDescription>
+            {ad.createdAt ? `Created on ${new Date(ad.createdAt).toLocaleDateString()}` : "Recently created"}
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
@@ -109,7 +117,7 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
                       <Badge variant="outline" className="mr-2">
                         {ad.aspectRatio}
                       </Badge>
-                      <Badge variant="secondary">{ad.type}</Badge>
+                      <Badge variant="secondary">{ad.type || "image"}</Badge>
                       {ad.adTone && (
                         <Badge variant="secondary" className="ml-2">
                           {ad.adTone}
@@ -134,7 +142,7 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button onClick={() => onDownload(ad)} className="w-full" variant="default">
+                    <Button onClick={() => handleDownload()} className="w-full" variant="default">
                       <Download className="h-4 w-4 mr-2" />
                       Download Original
                     </Button>
@@ -188,7 +196,7 @@ export function AdDetailModal({ ad, isOpen, onClose, onDownload }: AdDetailModal
                         </div>
                       </CardContent>
                       <CardFooter className="p-4 pt-0">
-                        <Button onClick={() => onDownload(ad, size)} className="w-full" variant="outline" size="sm">
+                        <Button onClick={() => handleDownload(size)} className="w-full" variant="outline" size="sm">
                           <Download className="h-3 w-3 mr-2" />
                           Download {size}
                         </Button>

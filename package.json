@@ -61,8 +61,8 @@
     "@auth/core": "latest",
     "nodemailer": "latest",
     "@emotion/is-prop-valid": "latest",
-    "ws": "latest",
     "@supabase/supabase-js": "latest",
+    "ws": "latest",
     "next-auth": "latest",
     "cheerio": "latest",
     "dotenv": "latest",
@@ -70,8 +70,8 @@
     "framer-motion": "latest",
     "@ai-sdk/openai": "latest",
     "ai": "latest",
-    "openai": "latest",
-    "@supabase/auth-helpers-nextjs": "latest"
+    "@supabase/auth-helpers-nextjs": "latest",
+    "openai": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
