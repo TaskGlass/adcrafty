@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
-// Initialize the OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 // Enhanced logging function
 function logDebug(message: string, data?: any) {
   console.log(`[DEBUG] ${message}`, data ? JSON.stringify(data, null, 2) : "")
@@ -157,9 +152,9 @@ export async function POST(req: Request) {
   logDebug("Image generation request received")
 
   try {
-    // Check for OpenAI API key
+    // Check for OpenAI API key with detailed logging
     if (!process.env.OPENAI_API_KEY) {
-      logDebug("OpenAI API key is missing")
+      logDebug("OpenAI API key is missing - check your environment variables")
       return NextResponse.json(
         {
           success: false,
@@ -168,6 +163,8 @@ export async function POST(req: Request) {
         },
         { status: 200 },
       )
+    } else {
+      logDebug("OpenAI API key is present")
     }
 
     // Parse request body with better error handling
@@ -223,6 +220,18 @@ export async function POST(req: Request) {
     })
 
     try {
+      // Initialize the OpenAI client with proper error handling
+      let openai
+      try {
+        openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        })
+        logDebug("OpenAI client initialized successfully")
+      } catch (initError) {
+        logDebug("Error initializing OpenAI client", { error: initError })
+        throw new Error("Failed to initialize OpenAI client")
+      }
+
       // Set up a timeout for the OpenAI request
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
@@ -230,7 +239,7 @@ export async function POST(req: Request) {
         logDebug("Request timed out")
       }, 30000) // 30 second timeout
 
-      // Make the OpenAI API call using the new gpt-image-1 model
+      // Make the OpenAI API call using the gpt-image-1 model
       logDebug("Calling OpenAI API with gpt-image-1 model")
       const response = await openai.images.generate({
         model: "gpt-image-1",
