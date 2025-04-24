@@ -491,7 +491,7 @@ export function AdCreator() {
     setGenerationError(null)
     setPreviewImage(null)
     setGenerationProgress(0)
-    setGenerationStatus("Starting generation...")
+    setGenerationStatus("Starting generation with GPT-4 Vision...")
 
     // Generate ad copy if enabled
     let adCopy = null
@@ -743,6 +743,15 @@ export function AdCreator() {
                   </AlertDescription>
                 </Alert>
               )}
+
+              {/* New alert to inform users about the GPT-4 Vision model */}
+              <Alert className="bg-primary/10 border-primary/20">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <AlertDescription>
+                  <span className="font-medium">Now using GPT-4 Vision!</span> Our ad generator now uses OpenAI's latest
+                  image generation model for even better quality ads.
+                </AlertDescription>
+              </Alert>
 
               {adCopyError && (
                 <Alert className="bg-yellow-50 border-yellow-200">

@@ -82,26 +82,34 @@ The ad should feel like it belongs to this brand's existing marketing materials.
   return enhancedPrompt
 }
 
-// Helper function to determine image size based on aspect ratio
-function getImageSize(aspectRatio: string): "1024x1024" | "1792x1024" | "1024x1792" {
+// Helper function to determine image size based on aspect ratio for gpt-image-1
+function getImageSize(aspectRatio: string): { width: number; height: number } {
   // Check if it's a Google ad size format (e.g., "300x250")
   if (/^\d+x\d+$/.test(aspectRatio)) {
-    // For Google ad sizes, we'll use square format as DALL-E doesn't support arbitrary dimensions
-    return "1024x1024"
+    const [w, h] = aspectRatio.split("x").map(Number)
+    // Scale to fit within model limits while maintaining aspect ratio
+    const maxDimension = Math.max(w, h)
+    const scale = 1024 / maxDimension
+    return {
+      width: Math.round(w * scale),
+      height: Math.round(h * scale),
+    }
   }
 
   // For standard aspect ratios
   switch (aspectRatio) {
     case "1:1":
-      return "1024x1024"
+      return { width: 1024, height: 1024 }
     case "16:9":
+      return { width: 1792, height: 1024 }
     case "1.91:1":
-      return "1792x1024"
+      return { width: 1792, height: 1024 }
     case "4:5":
+      return { width: 1024, height: 1280 }
     case "9:16":
-      return "1024x1792"
+      return { width: 1024, height: 1792 }
     default:
-      return "1024x1024"
+      return { width: 1024, height: 1024 }
   }
 }
 
@@ -205,10 +213,13 @@ export async function POST(req: Request) {
       adPoints,
     )
 
+    // Get dimensions based on aspect ratio
+    const dimensions = getImageSize(aspectRatio)
+
     logDebug("Enhanced prompt created", {
       promptPreview: enhancedPrompt.substring(0, 100) + "...",
       aspectRatio,
-      size: getImageSize(aspectRatio),
+      dimensions,
     })
 
     try {
@@ -219,13 +230,15 @@ export async function POST(req: Request) {
         logDebug("Request timed out")
       }, 30000) // 30 second timeout
 
-      // Make the OpenAI API call
-      logDebug("Calling OpenAI API")
+      // Make the OpenAI API call using the new gpt-image-1 model
+      logDebug("Calling OpenAI API with gpt-image-1 model")
       const response = await openai.images.generate({
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt: enhancedPrompt,
         n: 1,
-        size: getImageSize(aspectRatio),
+        size: `${dimensions.width}x${dimensions.height}`,
+        quality: "hd",
+        response_format: "url",
       })
 
       // Clear the timeout
