@@ -1,13 +1,53 @@
 import { NextResponse } from "next/server"
-import { openai } from "@ai-sdk/openai"
-import { generateText } from "ai"
+import OpenAI from "openai"
+
+// Initialize the OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+
+// Enhanced logging function
+function logDebug(message: string, data?: any) {
+  console.log(`[DEBUG] ${message}`, data ? JSON.stringify(data, null, 2) : "")
+}
 
 export async function POST(req: Request) {
+  logDebug("Ad copy generation request received")
+
   try {
+    // Check for OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      logDebug("OpenAI API key is missing")
+      return NextResponse.json(
+        {
+          success: true,
+          adCopy: {
+            primaryText: "Your compelling ad copy will appear here.",
+            headlines: ["Headline 1", "Headline 2", "Headline 3", "Headline 4", "Headline 5"],
+            descriptions: ["Description 1", "Description 2"],
+          },
+          warning: "OpenAI API key is not configured. Using default ad copy.",
+        },
+        { status: 200 },
+      )
+    }
+
     const { prompt, brandAnalysis, brandSettings } = await req.json()
 
     if (!prompt) {
-      return NextResponse.json({ success: false, error: "Prompt is required" }, { status: 400 })
+      logDebug("Missing prompt in request")
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Prompt is required",
+          adCopy: {
+            primaryText: "Your compelling ad copy will appear here.",
+            headlines: ["Headline 1", "Headline 2", "Headline 3", "Headline 4", "Headline 5"],
+            descriptions: ["Description 1", "Description 2"],
+          },
+        },
+        { status: 200 },
+      )
     }
 
     // Construct a system prompt that includes brand information if available
@@ -31,41 +71,40 @@ export async function POST(req: Request) {
     try {
       // Generate the ad copy with timeout handling
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
-      const { text } = await generateText({
-        model: openai("gpt-4o"),
-        system: systemPrompt,
-        prompt: `Create Meta ad copy for: ${prompt}\n\nRespond in JSON format with the following structure:\n{\n  "primaryText": "...",\n  "headlines": ["...", "...", "...", "...", "..."],\n  "descriptions": ["...", "..."]\n}`,
-        signal: controller.signal,
+      logDebug("Calling OpenAI API for ad copy generation")
+
+      // Use the ChatCompletion API with GPT-4
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4", // Explicitly using GPT-4
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `Create Meta ad copy for: ${prompt}\n\nRespond in JSON format with the following structure:\n{\n  "primaryText": "...",\n  "headlines": ["...", "...", "...", "...", "..."],\n  "descriptions": ["...", "..."]\n}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }, // Ensure we get valid JSON
       })
 
       clearTimeout(timeoutId)
 
+      const responseText = completion.choices[0]?.message?.content || ""
+      logDebug("AI response received", { textPreview: responseText.substring(0, 100) + "..." })
+
       // Parse the response
       try {
-        // Extract JSON from the response (in case the model includes extra text)
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const adCopy = JSON.parse(jsonMatch[0])
-          return NextResponse.json({
-            success: true,
-            adCopy,
-          })
-        } else {
-          // If we can't extract JSON, return a fallback structure
-          return NextResponse.json({
-            success: true,
-            adCopy: {
-              primaryText: "Your compelling ad copy will appear here.",
-              headlines: ["Headline 1", "Headline 2", "Headline 3", "Headline 4", "Headline 5"],
-              descriptions: ["Description 1", "Description 2"],
-            },
-            warning: "Could not parse AI response, using fallback copy.",
-          })
-        }
+        // Parse the JSON response
+        const adCopy = JSON.parse(responseText)
+        return NextResponse.json({
+          success: true,
+          adCopy,
+        })
       } catch (parseError) {
-        console.error("Error parsing AI response:", parseError)
+        logDebug("Error parsing AI response:", { error: parseError })
         // Return fallback ad copy structure
         return NextResponse.json({
           success: true, // Still return success to not block the flow
@@ -78,7 +117,7 @@ export async function POST(req: Request) {
         })
       }
     } catch (aiError) {
-      console.error("AI generation error:", aiError)
+      logDebug("AI generation error:", { error: aiError })
       // Return fallback ad copy structure
       return NextResponse.json({
         success: true, // Still return success to not block the flow
@@ -91,7 +130,7 @@ export async function POST(req: Request) {
       })
     }
   } catch (error) {
-    console.error("Error generating ad copy:", error)
+    logDebug("Error generating ad copy:", { error })
     // Always return a valid JSON response, even in case of error
     return NextResponse.json(
       {

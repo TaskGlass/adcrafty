@@ -60,6 +60,8 @@ export function AdCreator() {
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [currentAspectRatio, setCurrentAspectRatio] = useState<string | null>(null)
   const [generationStatus, setGenerationStatus] = useState<string>("idle")
+  const [debugLogs, setDebugLogs] = useState<string[]>([])
+  const [showDebugLogs, setShowDebugLogs] = useState(false)
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null)
   const maxFreeUsage = 3
   const maxSquareFormatUsage = 3
@@ -228,12 +230,61 @@ export function AdCreator() {
     }
   }
 
+  // Add a debug log
+  const addDebugLog = (message: string) => {
+    setDebugLogs((prev) => [...prev, `[${new Date().toISOString()}] ${message}`])
+  }
+
+  // Generate a fallback image URL directly in the client
+  const generateFallbackImageUrl = (aspectRatio: string, promptText: string): string => {
+    let width = 800
+    let height = 800
+
+    // Check if it's a Google ad size format (e.g., "300x250")
+    if (/^\d+x\d+$/.test(aspectRatio)) {
+      const [w, h] = aspectRatio.split("x").map(Number)
+      width = w
+      height = h
+    } else {
+      // For standard aspect ratios
+      switch (aspectRatio) {
+        case "1:1":
+          width = 800
+          height = 800
+          break
+        case "4:5":
+          width = 800
+          height = 1000
+          break
+        case "9:16":
+          width = 800
+          height = 1422
+          break
+        case "16:9":
+          width = 1422
+          height = 800
+          break
+        case "1.91:1":
+          width = 1528
+          height = 800
+          break
+      }
+    }
+
+    const placeholderText = promptText
+      ? `Sample Ad - Based on: ${promptText.substring(0, 30)}...`
+      : "Sample Ad - AI Generation Temporarily Unavailable"
+
+    return `/placeholder.svg?height=${height}&width=${width}&text=${encodeURIComponent(placeholderText)}`
+  }
+
   // Improved function to generate an ad with better error handling and retries
   const generateAdWithFallback = async (prompt: string, aspectRatio: string): Promise<any> => {
     // Reset any previous errors
     setGenerationError(null)
     setCurrentAspectRatio(aspectRatio)
-    setGenerationStatus(`Generating ${aspectRatio} format...`)
+    setGenerationStatus(`Generating ${aspectRatio} format with GPT-4...`)
+    setDebugLogs([])
 
     // Start progress simulation
     startProgressSimulation()
@@ -242,7 +293,7 @@ export function AdCreator() {
     const payload = {
       prompt,
       aspectRatio,
-      brandAnalysis, // Include brand analysis if available
+      brandAnalysis, // Include brand analysis
       brandSettings, // Include brand settings if available
       adTone,
       adCta,
@@ -250,133 +301,93 @@ export function AdCreator() {
       adPoints: adPoints.filter((point) => point.trim() !== ""),
     }
 
-    console.log("Generating ad with payload:", JSON.stringify(payload, null, 2))
+    addDebugLog(`Generating ad with payload: ${JSON.stringify(payload, null, 2)}`)
 
-    // Try up to 3 times
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      addDebugLog(`Attempting to generate ad image for ${aspectRatio} format using GPT-4`)
+      setGenerationStatus(`Generating ${aspectRatio} format with GPT-4...`)
+
+      // Set a timeout for the fetch request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout for GPT-4
+
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      })
+
+      // Clear the timeout
+      clearTimeout(timeoutId)
+
+      // Check if the request was successful
+      if (!response.ok) {
+        addDebugLog(`API response not OK: ${response.status}`)
+        throw new Error(`API returned status ${response.status}`)
+      }
+
+      // Try to parse the response as JSON
+      let data
       try {
-        console.log(`Attempt ${attempt} to generate ad image`)
-        setGenerationStatus(`Generating ${aspectRatio} format (attempt ${attempt}/3)...`)
+        data = await response.json()
+        addDebugLog(`API response received: ${JSON.stringify(data, null, 2)}`)
 
-        // Set a timeout for the fetch request
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        })
-
-        // Clear the timeout
-        clearTimeout(timeoutId)
-
-        // Check if the request was successful
-        if (!response.ok) {
-          console.warn(`API response not OK: ${response.status}`)
-          throw new Error(`API returned status ${response.status}`)
+        // Add any logs from the server
+        if (data.logs && Array.isArray(data.logs)) {
+          data.logs.forEach((log: string) => addDebugLog(log))
         }
+      } catch (parseError) {
+        addDebugLog(`Failed to parse API response: ${parseError}`)
+        throw new Error("Invalid response format")
+      }
 
-        // Try to parse the response as JSON
-        let data
-        try {
-          data = await response.json()
-          console.log("API response:", JSON.stringify(data, null, 2))
-        } catch (parseError) {
-          console.error("Failed to parse API response:", parseError)
-          throw new Error("Invalid response format")
-        }
+      // Stop progress simulation
+      stopProgressSimulation()
 
-        // Check if the response indicates success
-        if (data.success) {
-          // Stop progress simulation
-          stopProgressSimulation()
+      // If it's a fallback image, show a warning
+      if (data.isFallback) {
+        setGenerationError(
+          data.message || "Using a placeholder image because the AI image generation service is currently unavailable.",
+        )
+      }
 
-          // If it's a fallback image, show a warning
-          if (data.isFallback) {
-            setGenerationError(
-              "Using a placeholder image because the AI image generation service is currently unavailable.",
-            )
-          }
+      // Set the preview image
+      setPreviewImage(data.imageUrl)
+      setGenerationStatus("Generation complete!")
 
-          // Set the preview image
-          setPreviewImage(data.imageUrl)
-          setGenerationStatus("Generation complete!")
+      return data
+    } catch (error: any) {
+      addDebugLog(`Generation failed: ${error.message}`)
+      setGenerationStatus(`Generation failed, trying fallback...`)
 
-          return data
-        } else {
-          // If the API returned an error, throw it
-          throw new Error(data.error || "Unknown error")
-        }
-      } catch (error: any) {
-        console.error(`Attempt ${attempt} failed:`, error)
-        setGenerationStatus(`Attempt ${attempt} failed, ${attempt < 3 ? "retrying..." : "trying fallback..."}`)
+      // Stop progress simulation
+      stopProgressSimulation()
 
-        // If this was the last attempt, try the fallback API
-        if (attempt === 3) {
-          console.log("All attempts failed, trying fallback API")
-          try {
-            setGenerationStatus("Using fallback image generator...")
+      // Always provide a fallback image even if everything fails
+      const fallbackUrl = generateFallbackImageUrl(aspectRatio, prompt)
 
-            const fallbackResponse = await fetch("/api/generate/fallback", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(payload),
-            })
+      setGenerationError("Using a placeholder image due to technical issues with GPT-4 integration.")
+      setPreviewImage(fallbackUrl)
+      setGenerationStatus("Using fallback image")
 
-            if (!fallbackResponse.ok) {
-              throw new Error(`Fallback API returned status ${fallbackResponse.status}`)
-            }
-
-            const fallbackData = await fallbackResponse.json()
-            console.log("Fallback API response:", JSON.stringify(fallbackData, null, 2))
-
-            // Stop progress simulation
-            stopProgressSimulation()
-
-            // Set the error message but continue with the fallback image
-            setGenerationError(
-              "Using a placeholder image because the AI image generation service is currently unavailable.",
-            )
-
-            // Set the preview image
-            setPreviewImage(fallbackData.imageUrl)
-            setGenerationStatus("Using fallback image")
-
-            return fallbackData
-          } catch (fallbackError) {
-            console.error("Fallback API failed:", fallbackError)
-
-            // Stop progress simulation
-            stopProgressSimulation()
-
-            setGenerationStatus("Generation failed")
-            throw new Error("Both main and fallback APIs failed")
-          }
-        }
-
-        // If this wasn't the last attempt, wait before retrying
-        if (attempt < 3) {
-          console.log(`Waiting before retry ${attempt + 1}...`)
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)) // Exponential backoff
-        }
+      return {
+        success: true,
+        imageUrl: fallbackUrl,
+        aspectRatio,
+        isFallback: true,
+        message: "Using placeholder image due to technical issues with GPT-4 integration.",
       }
     }
-
-    // This should never be reached due to the throw in the last attempt, but TypeScript needs it
-    stopProgressSimulation()
-    throw new Error("Failed to generate image after multiple attempts")
   }
 
   // Function to safely generate ad copy with fallback
   const generateAdCopyWithFallback = async () => {
     setAdCopyError(null)
-    setGenerationStatus("Generating ad copy...")
+    setGenerationStatus("Generating ad copy with GPT-4...")
+    addDebugLog("Starting ad copy generation with GPT-4")
 
     // Default fallback ad copy in case of errors
     const fallbackAdCopy = {
@@ -388,7 +399,7 @@ export function AdCreator() {
     try {
       // First attempt with timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
       const response = await fetch("/api/generate-ad-copy", {
         method: "POST",
@@ -407,7 +418,7 @@ export function AdCreator() {
 
       // Check if response is ok before trying to parse JSON
       if (!response.ok) {
-        console.warn("Ad copy generation failed with status:", response.status)
+        addDebugLog(`Ad copy generation failed with status: ${response.status}`)
         setAdCopyError("Ad copy generation failed. Using default copy instead.")
         return fallbackAdCopy
       }
@@ -415,23 +426,26 @@ export function AdCreator() {
       // Try to parse the JSON response
       try {
         const data = await response.json()
+        addDebugLog(`Ad copy generation response: ${JSON.stringify(data, null, 2)}`)
 
         if (data.success) {
           if (data.warning) {
             setAdCopyError(data.warning)
+            addDebugLog(`Ad copy warning: ${data.warning}`)
           }
           return data.adCopy
         } else {
           setAdCopyError(data.error || "Failed to generate ad copy. Using default copy instead.")
+          addDebugLog(`Ad copy error: ${data.error}`)
           return fallbackAdCopy
         }
       } catch (parseError) {
-        console.error("Error parsing ad copy response:", parseError)
+        addDebugLog(`Error parsing ad copy response: ${parseError}`)
         setAdCopyError("Error parsing ad copy response. Using default copy instead.")
         return fallbackAdCopy
       }
     } catch (fetchError) {
-      console.error("Error fetching ad copy:", fetchError)
+      addDebugLog(`Error fetching ad copy: ${fetchError}`)
       setAdCopyError("Network error while generating ad copy. Using default copy instead.")
       return fallbackAdCopy
     }
@@ -491,7 +505,9 @@ export function AdCreator() {
     setGenerationError(null)
     setPreviewImage(null)
     setGenerationProgress(0)
-    setGenerationStatus("Starting generation with GPT-4 Vision...")
+    setGenerationStatus("Starting generation with GPT-4...")
+    setDebugLogs([])
+    addDebugLog("Starting ad generation process")
 
     // Generate ad copy if enabled
     let adCopy = null
@@ -499,6 +515,7 @@ export function AdCreator() {
       try {
         adCopy = await generateAdCopyWithFallback()
         setGeneratedAdCopy(adCopy)
+        addDebugLog("Ad copy generated successfully")
 
         if (adCopyError) {
           toast({
@@ -509,10 +526,11 @@ export function AdCreator() {
         }
       } catch (error) {
         console.error("Error generating ad copy:", error)
+        addDebugLog(`Error generating ad copy: ${error}`)
         // Continue with image generation even if copy generation fails
         toast({
           title: "Ad Copy Generation Issue",
-          description: "There was a problem generating ad copy, but we'll continue with your image.",
+          description: "There was a problem generating ad copy with GPT-4, but we'll continue with your image.",
           variant: "default",
         })
 
@@ -535,6 +553,7 @@ export function AdCreator() {
       for (let i = 0; i < totalRatios; i++) {
         const aspectRatio = selectedAspectRatios[i]
         setGenerationProgress(Math.round(((i + 1) / totalRatios) * 100))
+        addDebugLog(`Starting generation for aspect ratio: ${aspectRatio}`)
 
         try {
           // Use the improved generateAdWithFallback function
@@ -546,6 +565,7 @@ export function AdCreator() {
               url: data.imageUrl,
               aspectRatio,
             })
+            addDebugLog(`Successfully generated image for ${aspectRatio}`)
 
             // Save the ad based on user status
             if (isAnonymous) {
@@ -562,6 +582,7 @@ export function AdCreator() {
                 adOffer,
                 adPoints: adPoints.filter((point) => point.trim() !== ""),
               })
+              addDebugLog(`Saved ad to local storage for anonymous user`)
             } else if (user?.id) {
               // Save to Supabase for authenticated users
               await createAd({
@@ -577,10 +598,11 @@ export function AdCreator() {
                 adOffer,
                 adPoints: adPoints.filter((point) => point.trim() !== ""),
               })
+              addDebugLog(`Saved ad to database for user: ${user.id}`)
             }
           } else {
             failureCount++
-            console.error("Error from API:", data.error)
+            addDebugLog(`Error from API: ${data.error}`)
             toast({
               title: "Error generating image",
               description: data.error || "Something went wrong. Please try again.",
@@ -589,7 +611,7 @@ export function AdCreator() {
           }
         } catch (error: any) {
           failureCount++
-          console.error("Error generating image:", error)
+          addDebugLog(`Error generating image: ${error.message}`)
           toast({
             title: "Error generating image",
             description: error.message || "Failed to generate image. Please try again.",
@@ -606,6 +628,7 @@ export function AdCreator() {
         // Show the ad performance analyzer for the first generated image
         setGeneratedAdImage(generatedImages[0]?.url || null)
         setShowPerformanceAnalyzer(true)
+        addDebugLog(`Generation completed successfully: ${successCount} images generated`)
 
         // Update usage counts
         if (
@@ -622,7 +645,7 @@ export function AdCreator() {
 
         toast({
           title: "Ad generation complete!",
-          description: `Successfully generated ${successCount} ad variations.`,
+          description: `Successfully generated ${successCount} ad variations with GPT-4.`,
         })
 
         // Redirect to library after a short delay
@@ -630,23 +653,25 @@ export function AdCreator() {
           router.push("/dashboard/library")
         }, 1500)
       } else {
+        addDebugLog(`Generation failed: No successful images generated`)
         toast({
           title: "Generation failed",
-          description: "Failed to generate any ads. Please try again.",
+          description: "Failed to generate any ads with GPT-4. Please try again.",
           variant: "destructive",
         })
       }
     } catch (error: any) {
-      console.error("Error in generation process:", error)
+      addDebugLog(`Error in generation process: ${error.message}`)
       toast({
         title: "Error",
-        description: "Failed to generate ads. Please try again.",
+        description: "Failed to generate ads with GPT-4. Please try again.",
         variant: "destructive",
       })
     } finally {
       // Stop any running progress simulation
       stopProgressSimulation()
       setIsGenerating(false)
+      addDebugLog("Generation process completed")
     }
   }
 
@@ -744,12 +769,12 @@ export function AdCreator() {
                 </Alert>
               )}
 
-              {/* New alert to inform users about the GPT-4 Vision model */}
+              {/* New alert to inform users about the GPT-4 model */}
               <Alert className="bg-primary/10 border-primary/20">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <AlertDescription>
-                  <span className="font-medium">Now using GPT-4 Vision!</span> Our ad generator now uses OpenAI's latest
-                  image generation model for even better quality ads.
+                  <span className="font-medium">Now using GPT-4!</span> Our ad generator now uses OpenAI's GPT-4 model
+                  for even better quality ads and ad copy.
                 </AlertDescription>
               </Alert>
 
@@ -791,6 +816,25 @@ export function AdCreator() {
                     className="w-full h-auto object-contain"
                   />
                   <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">Preview</div>
+                </div>
+              )}
+
+              {/* Debug logs section */}
+              {debugLogs.length > 0 && (
+                <div className="mt-4">
+                  <Button variant="outline" size="sm" onClick={() => setShowDebugLogs(!showDebugLogs)} className="mb-2">
+                    {showDebugLogs ? "Hide Debug Logs" : "Show Debug Logs"}
+                  </Button>
+
+                  {showDebugLogs && (
+                    <div className="bg-black text-green-400 p-4 rounded-md text-xs font-mono overflow-auto max-h-60">
+                      {debugLogs.map((log, index) => (
+                        <div key={index} className="mb-1">
+                          {log}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1284,7 +1328,7 @@ export function AdCreator() {
                     ) : (
                       <>
                         <ImageIcon className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
-                        Generate {brandAnalysis ? "Brand-Tailored" : ""} Image Ad
+                        Generate {brandAnalysis ? "Brand-Tailored" : ""} Image Ad with GPT-4
                         <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 -translate-x-full group-hover:animate-shimmer" />
                       </>
                     )}

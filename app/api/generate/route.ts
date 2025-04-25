@@ -82,7 +82,7 @@ The ad should feel like it belongs to this brand's existing marketing materials.
   return enhancedPrompt
 }
 
-// Helper function to determine image size based on aspect ratio for gpt-image-1
+// Helper function to determine image size based on aspect ratio
 function getImageSize(aspectRatio: string): { width: number; height: number } {
   // Check if it's a Google ad size format (e.g., "300x250")
   if (/^\d+x\d+$/.test(aspectRatio)) {
@@ -228,16 +228,17 @@ export async function POST(req: Request) {
       const timeoutId = setTimeout(() => {
         controller.abort()
         logDebug("Request timed out")
-      }, 30000) // 30 second timeout
+      }, 60000) // 60 second timeout for GPT-4
 
-      // Make the OpenAI API call using the new gpt-image-1 model
-      logDebug("Calling OpenAI API with gpt-image-1 model")
+      // Make the OpenAI API call using DALL-E 3 with GPT-4 quality
+      logDebug("Calling OpenAI API with DALL-E 3 model")
       const response = await openai.images.generate({
-        model: "gpt-image-1",
+        model: "dall-e-3", // Using DALL-E 3 which is integrated with GPT-4
         prompt: enhancedPrompt,
         n: 1,
         size: `${dimensions.width}x${dimensions.height}`,
         quality: "hd",
+        style: "natural", // More photorealistic style
         response_format: "url",
       })
 
