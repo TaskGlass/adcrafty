@@ -47,7 +47,7 @@ export default function MobileNav() {
       <SheetContent side="left" className="bg-background border-r border-border/40 p-0">
         <div className="flex h-16 items-center border-b border-border/40 px-4">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl" onClick={() => setOpen(false)}>
-            <span className="text-primary text-2xl">AdCreatify</span>
+            <span className="text-primary text-2xl">AdCrafty</span>
           </Link>
           <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />

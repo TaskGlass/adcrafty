@@ -54,7 +54,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              AdCreatify
+              AdCrafty
             </motion.span>
           </Link>
           <motion.nav
@@ -119,8 +119,8 @@ export default function Home() {
                   Ad Creation Platform
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-10">
-                  Generate professional static image ads for Meta and Google in seconds. Try it now - no signup
-                  required!
+                  Generate professional static image ads for Meta and Google in seconds. Signup for free and get 5 free
+                  downloads!
                 </p>
               </div>
               <motion.div
@@ -131,7 +131,7 @@ export default function Home() {
               >
                 <Link href="/dashboard">
                   <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-md text-base w-full sm:w-auto glow">
-                    Try Now - No Signup <ArrowRight className="ml-2 h-4 w-4" />
+                    Try Now - Get 5 Free Downloads <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/signup">
@@ -337,7 +337,7 @@ export default function Home() {
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold">
             <Link href="/" className="text-primary hover:text-primary/90 transition-colors">
-              AdCreatify
+              AdCrafty
             </Link>
             <span className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} All rights reserved.

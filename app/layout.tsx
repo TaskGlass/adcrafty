@@ -9,7 +9,7 @@ import { Toaster } from "@/components/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AdCreatify - Create stunning ads with AI",
+  title: "AdCrafty - Create stunning ads with AI",
   description: "Generate professional static image ads for Meta and Google with AI",
     generator: 'v0.dev'
 }
