@@ -10,11 +10,10 @@ import { getUserAds, deleteAd } from "@/lib/ad-service"
 import { getAnonymousAds, deleteAnonymousAd } from "@/lib/anonymous-storage"
 import { toast } from "@/components/ui/use-toast"
 import { canUserDownload, trackDownload, trackAnonymousDownload } from "@/lib/usage-service"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { AdCard } from "@/components/ad-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ImageIcon, Video, Search, Filter, Plus, RefreshCw, Grid3X3, Grid2X2, LayoutList } from "lucide-react"
+import { ImageIcon, Search, Filter, Plus, RefreshCw, Grid3X3, Grid2X2, LayoutList, Share2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { AdDetailModal } from "@/components/ad-detail-modal"
 import { motion, AnimatePresence } from "framer-motion"
+import { Badge } from "@/components/ui/badge"
 
 export default function AdLibrary() {
   const { user, isAnonymous, subscription } = useAuth()
@@ -35,6 +35,7 @@ export default function AdLibrary() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null)
+  const [selectedType, setSelectedType] = useState<string | null>(null)
   const [canDownload, setCanDownload] = useState(true)
   const [isCheckingDownloadPermission, setIsCheckingDownloadPermission] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "compact" | "list">("grid")
@@ -61,7 +62,7 @@ export default function AdLibrary() {
       console.error("Error fetching ads:", error)
       toast({
         title: "Error",
-        description: "Failed to load your ads. Please try again.",
+        description: "Failed to load your content. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -80,7 +81,7 @@ export default function AdLibrary() {
   }, [user, isAnonymous])
 
   useEffect(() => {
-    // Filter ads based on search query and selected filter
+    // Filter ads based on search query, selected filter, and selected type
     let result = [...ads]
 
     if (searchQuery) {
@@ -92,8 +93,12 @@ export default function AdLibrary() {
       result = result.filter((ad) => ad.aspectRatio === selectedFilter)
     }
 
+    if (selectedType) {
+      result = result.filter((ad) => ad.contentType === selectedType)
+    }
+
     setFilteredAds(result)
-  }, [searchQuery, selectedFilter, ads])
+  }, [searchQuery, selectedFilter, selectedType, ads])
 
   useEffect(() => {
     async function checkDownloadPermissions() {
@@ -129,15 +134,15 @@ export default function AdLibrary() {
         setAds(ads.filter((ad) => ad.id !== id))
         setFilteredAds(filteredAds.filter((ad) => ad.id !== id))
         toast({
-          title: "Ad deleted",
-          description: "The ad has been successfully deleted.",
+          title: "Item deleted",
+          description: "The item has been successfully deleted.",
         })
       }
     } catch (error) {
-      console.error("Error deleting ad:", error)
+      console.error("Error deleting item:", error)
       toast({
         title: "Error",
-        description: "Failed to delete the ad. Please try again.",
+        description: "Failed to delete the item. Please try again.",
         variant: "destructive",
       })
     }
@@ -199,13 +204,26 @@ export default function AdLibrary() {
   // Get unique aspect ratios for filtering
   const aspectRatios = [...new Set(ads.map((ad) => ad.aspectRatio))].filter(Boolean)
 
+  // Content type options
+  const contentTypes = [
+    { id: "static-image-ad", label: "Static Image Ad", icon: <ImageIcon className="h-4 w-4 mr-2" /> },
+    { id: "social-media-creative", label: "Social Media Creative", icon: <Share2 className="h-4 w-4 mr-2" /> },
+    { id: "stock-photo", label: "Stock Photo", icon: <ImageIcon className="h-4 w-4 mr-2" /> },
+  ]
+
+  // Function to get the content type label
+  const getContentTypeLabel = (type: string) => {
+    const contentType = contentTypes.find((ct) => ct.id === type)
+    return contentType ? contentType.label : "Unknown Type"
+  }
+
   return (
     <div className="grid gap-6">
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button variant="default" className="flex items-center gap-2" onClick={() => router.push("/dashboard")}>
             <Plus className="h-4 w-4" />
-            <span>Create New Ad</span>
+            <span>Create New</span>
           </Button>
           <Button variant="outline" size="icon" onClick={refreshAds} disabled={isRefreshing} className="relative">
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -217,7 +235,7 @@ export default function AdLibrary() {
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search ads..."
+              placeholder="Search library..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 w-full"
@@ -271,143 +289,85 @@ export default function AdLibrary() {
         </div>
       </div>
 
-      <Tabs defaultValue="image" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="image" className="flex items-center gap-2">
-            <ImageIcon className="h-4 w-4" />
-            <span>Image Ads</span>
-          </TabsTrigger>
-          <TabsTrigger value="video" className="flex items-center gap-2">
-            <Video className="h-4 w-4" />
-            <span>Video Ads</span>
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Badge
+          variant={selectedType === null ? "default" : "outline"}
+          className="cursor-pointer"
+          onClick={() => setSelectedType(null)}
+        >
+          All Types
+        </Badge>
+        {contentTypes.map((type) => (
+          <Badge
+            key={type.id}
+            variant={selectedType === type.id ? "default" : "outline"}
+            className="cursor-pointer flex items-center"
+            onClick={() => setSelectedType(type.id)}
+          >
+            {type.icon}
+            {type.label}
+          </Badge>
+        ))}
+      </div>
 
-        <TabsContent value="image">
-          {isLoading ? (
-            <div
-              className={`grid gap-4 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                  : viewMode === "compact"
-                    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-                    : "grid-cols-1"
-              }`}
-            >
-              {Array.from({ length: viewMode === "grid" ? 6 : viewMode === "compact" ? 8 : 4 }).map((_, i) => (
-                <AdCardSkeleton key={i} viewMode={viewMode} />
-              ))}
-            </div>
-          ) : filteredAds.filter((ad) => ad.type === "image" || !ad.type).length > 0 ? (
-            <AnimatePresence>
+      {isLoading ? (
+        <div
+          className={`grid gap-4 ${
+            viewMode === "grid"
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              : viewMode === "compact"
+                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                : "grid-cols-1"
+          }`}
+        >
+          {Array.from({ length: viewMode === "grid" ? 6 : viewMode === "compact" ? 8 : 4 }).map((_, i) => (
+            <AdCardSkeleton key={i} viewMode={viewMode} />
+          ))}
+        </div>
+      ) : filteredAds.length > 0 ? (
+        <AnimatePresence>
+          <motion.div
+            className={`grid gap-4 ${
+              viewMode === "grid"
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                : viewMode === "compact"
+                  ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                  : "grid-cols-1"
+            }`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {filteredAds.map((ad) => (
               <motion.div
-                className={`grid gap-4 ${
-                  viewMode === "grid"
-                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                    : viewMode === "compact"
-                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-                      : "grid-cols-1"
-                }`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                key={ad.id || `anonymous-${ad.title}`}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
               >
-                {filteredAds
-                  .filter((ad) => ad.type === "image" || !ad.type)
-                  .map((ad) => (
-                    <motion.div
-                      key={ad.id || `anonymous-${ad.title}`}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <AdCard
-                        ad={ad}
-                        onDelete={() => handleDelete(ad.id || "")}
-                        onDownload={handleDownload}
-                        onViewDetails={() => handleViewDetails(ad)}
-                        canDownload={canDownload}
-                        isCheckingDownloadPermission={isCheckingDownloadPermission}
-                        viewMode={viewMode}
-                      />
-                    </motion.div>
-                  ))}
+                <AdCard
+                  ad={ad}
+                  onDelete={() => handleDelete(ad.id || "")}
+                  onDownload={handleDownload}
+                  onViewDetails={() => handleViewDetails(ad)}
+                  canDownload={canDownload}
+                  isCheckingDownloadPermission={isCheckingDownloadPermission}
+                  viewMode={viewMode}
+                  contentTypeLabel={getContentTypeLabel(ad.contentType || "static-image-ad")}
+                />
               </motion.div>
-            </AnimatePresence>
-          ) : (
-            <EmptyState
-              title="No image ads yet"
-              description="Create your first image ad to see it here."
-              action={<Button onClick={() => router.push("/dashboard")}>Create Image Ad</Button>}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="video">
-          {isLoading ? (
-            <div
-              className={`grid gap-4 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                  : viewMode === "compact"
-                    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-                    : "grid-cols-1"
-              }`}
-            >
-              {Array.from({ length: viewMode === "grid" ? 6 : viewMode === "compact" ? 8 : 4 }).map((_, i) => (
-                <AdCardSkeleton key={i} viewMode={viewMode} />
-              ))}
-            </div>
-          ) : filteredAds.filter((ad) => ad.type === "video").length > 0 ? (
-            <AnimatePresence>
-              <motion.div
-                className={`grid gap-4 ${
-                  viewMode === "grid"
-                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                    : viewMode === "compact"
-                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-                      : "grid-cols-1"
-                }`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {filteredAds
-                  .filter((ad) => ad.type === "video")
-                  .map((ad) => (
-                    <motion.div
-                      key={ad.id || `anonymous-${ad.title}`}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <AdCard
-                        ad={ad}
-                        onDelete={() => handleDelete(ad.id || "")}
-                        onDownload={handleDownload}
-                        onViewDetails={() => handleViewDetails(ad)}
-                        isVideo={true}
-                        canDownload={canDownload}
-                        isCheckingDownloadPermission={isCheckingDownloadPermission}
-                        viewMode={viewMode}
-                      />
-                    </motion.div>
-                  ))}
-              </motion.div>
-            </AnimatePresence>
-          ) : (
-            <EmptyState
-              title="No video ads yet"
-              description="Create your first video ad to see it here."
-              action={<Button onClick={() => router.push("/dashboard?tab=video")}>Create Video Ad</Button>}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      ) : (
+        <EmptyState
+          title="Your library is empty"
+          description="Create your first content to see it here."
+          action={<Button onClick={() => router.push("/dashboard")}>Create New</Button>}
+        />
+      )}
 
       {selectedAd && (
         <AdDetailModal
@@ -415,6 +375,7 @@ export default function AdLibrary() {
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
           onDownload={handleDownload}
+          contentTypeLabel={getContentTypeLabel(selectedAd.contentType || "static-image-ad")}
         />
       )}
     </div>

@@ -576,29 +576,30 @@ export function AdCreator() {
                 imageUrl: data.imageUrl,
                 aspectRatio,
                 type: "image",
-                adCopy: adCopy,
-                adTone,
-                adCta,
-                adOffer,
-                adPoints: adPoints.filter((point) => point.trim() !== ""),
+                // Don't include advanced fields for anonymous users
               })
               addDebugLog(`Saved ad to local storage for anonymous user`)
             } else if (user?.id) {
-              // Save to Supabase for authenticated users
-              await createAd({
-                title,
-                prompt,
-                imageUrl: data.imageUrl,
-                aspectRatio,
-                userId: user.id,
-                type: "image",
-                adCopy: adCopy,
-                adTone,
-                adCta,
-                adOffer,
-                adPoints: adPoints.filter((point) => point.trim() !== ""),
-              })
-              addDebugLog(`Saved ad to database for user: ${user.id}`)
+              try {
+                // Save to Supabase for authenticated users - but only with basic fields
+                // This avoids the schema error with ad_copy
+                await createAd({
+                  title,
+                  prompt,
+                  imageUrl: data.imageUrl,
+                  aspectRatio,
+                  userId: user.id,
+                  type: "image",
+                  // Intentionally omitting adCopy, adTone, adCta, adOffer, adPoints
+                })
+                addDebugLog(`Saved ad to database for user: ${user.id}`)
+              } catch (saveError: any) {
+                addDebugLog(`Error saving to database: ${saveError.message}`)
+                console.error("Error saving ad to database:", saveError)
+
+                // Don't show an error toast for database issues
+                // The image was still generated successfully
+              }
             }
           } else {
             failureCount++
@@ -770,13 +771,6 @@ export function AdCreator() {
               )}
 
               {/* New alert to inform users about the GPT-4 model */}
-              <Alert className="bg-primary/10 border-primary/20">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <AlertDescription>
-                  <span className="font-medium">Now using GPT-4!</span> Our ad generator now uses OpenAI's GPT-4 model
-                  for even better quality ads and ad copy.
-                </AlertDescription>
-              </Alert>
 
               {adCopyError && (
                 <Alert className="bg-yellow-50 border-yellow-200">
@@ -1328,7 +1322,7 @@ export function AdCreator() {
                     ) : (
                       <>
                         <ImageIcon className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
-                        Generate {brandAnalysis ? "Brand-Tailored" : ""} Image Ad with GPT-4
+                        Generate
                         <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 -translate-x-full group-hover:animate-shimmer" />
                       </>
                     )}

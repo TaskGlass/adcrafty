@@ -1,40 +1,23 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase-client"
-import type { Session, User, AuthError } from "@supabase/supabase-js"
-import { useRouter, usePathname } from "next/navigation"
-import { toast } from "@/components/ui/use-toast"
+import type { Session, User } from "@supabase/supabase-js"
 
+// Simplified auth context type
 type AuthContextType = {
   user: User | null
   session: Session | null
   isLoading: boolean
-  isAnonymous: boolean
-  signUp: (
-    email: string,
-    password: string,
-    metadata?: any,
-  ) => Promise<{
-    error: AuthError | null
-    data: any | null
-  }>
-  signIn: (
-    email: string,
-    password: string,
-  ) => Promise<{
-    error: AuthError | null
-    data: any | null
-  }>
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signOut: () => Promise<void>
   subscription: {
-    status: "free" | "pro" | "business" | null
+    status: "free" | "pro" | "business"
     isActive: boolean
-    billingCycle: "monthly" | "yearly"
   }
-  updateSubscription: (status: "free" | "pro" | "business", billingCycle?: "monthly" | "yearly") => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -43,292 +26,151 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isAnonymous, setIsAnonymous] = useState(true)
-  const [subscription, setSubscription] = useState<{
-    status: "free" | "pro" | "business" | null
-    isActive: boolean
-    billingCycle: "monthly" | "yearly"
-  }>({
-    status: "free",
+  const [subscription, setSubscription] = useState({
+    status: "free" as const,
     isActive: true,
-    billingCycle: "monthly",
   })
   const router = useRouter()
-  const pathname = usePathname()
 
-  // Function to fetch user subscription
-  const fetchSubscription = async (userId: string) => {
-    try {
-      // Check if the subscriptions table exists first
-      const { error: tableCheckError } = await supabase.from("subscriptions").select("count").limit(1).single()
-
-      // If the table doesn't exist, use default free subscription
-      if (tableCheckError && tableCheckError.code === "42P01") {
-        console.log("Subscriptions table doesn't exist yet, using default free plan")
-        return
-      }
-
-      // If we get here, the table exists, so try to fetch the subscription
-      const { data, error } = await supabase.from("subscriptions").select("*").eq("user_id", userId).single()
-
-      if (error) {
-        // If no subscription found for this user, that's okay - use default free plan
-        if (error.code === "PGRST116") {
-          console.log("No subscription found for user, using default free plan")
-          return
-        }
-
-        console.error("Error fetching subscription:", error)
-        return
-      }
-
-      if (data) {
-        setSubscription({
-          status: data.plan as "free" | "pro" | "business",
-          isActive: data.is_active,
-          billingCycle: data.billing_cycle || "monthly",
-        })
-      }
-    } catch (error) {
-      console.error("Error in fetchSubscription:", error)
-    }
-  }
-
-  // Function to update user subscription
-  const updateSubscription = async (
-    status: "free" | "pro" | "business",
-    billingCycle: "monthly" | "yearly" = "monthly",
-  ) => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to update your subscription",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      // Check if the subscriptions table exists
-      const { error: tableCheckError } = await supabase.from("subscriptions").select("count").limit(1).single()
-
-      // If the table doesn't exist, show an error message
-      if (tableCheckError && tableCheckError.code === "42P01") {
-        toast({
-          title: "Subscription system unavailable",
-          description: "The subscription system is currently being set up. Please try again later.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Check if subscription exists
-      const { data: existingSubscription, error: fetchError } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .single()
-
-      if (fetchError && fetchError.code !== "PGRST116") {
-        throw fetchError
-      }
-
-      let result
-
-      if (existingSubscription) {
-        // Update existing subscription
-        result = await supabase
-          .from("subscriptions")
-          .update({
-            plan: status,
-            billing_cycle: billingCycle,
-            is_active: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", user.id)
-      } else {
-        // Create new subscription
-        result = await supabase.from("subscriptions").insert({
-          user_id: user.id,
-          plan: status,
-          billing_cycle: billingCycle,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-      }
-
-      if (result.error) {
-        throw result.error
-      }
-
-      // Update local state
-      setSubscription({
-        status,
-        isActive: true,
-        billingCycle,
-      })
-
-      toast({
-        title: "Subscription updated",
-        description: `Your subscription has been updated to ${status.toUpperCase()} with ${billingCycle} billing.`,
-      })
-    } catch (error: any) {
-      console.error("Error updating subscription:", error)
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update subscription",
-        variant: "destructive",
-      })
-    }
-  }
-
+  // Initialize auth state
   useEffect(() => {
-    const initializeAuth = async () => {
+    console.log("Auth provider initializing...")
+
+    // Get initial session
+    const initAuth = async () => {
       try {
-        // Get the current session
         const { data, error } = await supabase.auth.getSession()
 
         if (error) {
-          console.error("Error getting session:", error.message)
-          throw error
+          console.error("Error getting initial session:", error.message)
+          setIsLoading(false)
+          return
         }
 
-        // Log the session state for debugging
-        console.log("Auth Context - Session Check:", {
-          hasSession: !!data.session,
-          path: pathname,
-        })
+        console.log("Initial session check:", !!data.session)
 
         if (data.session) {
           setSession(data.session)
           setUser(data.session.user)
-          setIsAnonymous(false)
-
-          // Fetch subscription data
-          await fetchSubscription(data.session.user.id)
-        } else {
-          setIsAnonymous(true)
         }
-      } catch (error) {
-        console.error("Error initializing auth:", error)
-        setIsAnonymous(true)
+      } catch (err) {
+        console.error("Unexpected error during auth initialization:", err)
       } finally {
         setIsLoading(false)
       }
     }
 
-    // Initialize auth when the component mounts
-    initializeAuth()
+    initAuth()
 
     // Set up auth state change listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change:", event, !!session)
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log("Auth state change:", event)
 
-      if (session) {
-        setSession(session)
-        setUser(session.user)
-        setIsAnonymous(false)
-
-        // Fetch subscription data
-        await fetchSubscription(session.user.id)
+      if (newSession) {
+        setSession(newSession)
+        setUser(newSession.user)
       } else {
         setSession(null)
         setUser(null)
-        setIsAnonymous(true)
-        setSubscription({
-          status: "free",
-          isActive: true,
-          billingCycle: "monthly",
-        })
       }
     })
 
-    // Clean up the subscription when the component unmounts
+    // Clean up subscription
     return () => {
       subscription.unsubscribe()
     }
-  }, [pathname])
+  }, [])
 
-  const signUp = async (email: string, password: string, metadata?: any) => {
+  // Sign in function with explicit error handling
+  const signIn = async (email: string, password: string) => {
+    console.log("Sign in attempt for:", email)
+
+    try {
+      // Basic validation
+      if (!email || !password) {
+        return { success: false, error: "Email and password are required" }
+      }
+
+      // Direct auth call with minimal wrapping
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      console.log("Sign in response:", {
+        hasData: !!result.data,
+        hasUser: !!result.data.user,
+        hasSession: !!result.data.session,
+        hasError: !!result.error,
+        errorMessage: result.error?.message,
+      })
+
+      if (result.error) {
+        return {
+          success: false,
+          error: result.error.message || "Authentication failed",
+        }
+      }
+
+      if (result.data.session) {
+        setSession(result.data.session)
+        setUser(result.data.user)
+        return { success: true }
+      } else {
+        return {
+          success: false,
+          error: "No session returned from authentication",
+        }
+      }
+    } catch (err: any) {
+      console.error("Unexpected error during sign in:", err)
+      return {
+        success: false,
+        error: "An unexpected error occurred",
+      }
+    }
+  }
+
+  // Sign up function
+  const signUp = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: metadata,
-        },
       })
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign up.",
-          variant: "destructive",
-        })
+        return { success: false, error: error.message }
       }
 
-      return { data, error }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      })
-      return { data: null, error }
+      return { success: true }
+    } catch (err: any) {
+      console.error("Error during sign up:", err)
+      return { success: false, error: "An unexpected error occurred" }
     }
   }
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign in.",
-          variant: "destructive",
-        })
-      } else {
-        // Redirect to dashboard after successful login
-        router.push("/dashboard")
-      }
-
-      return { data, error }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      })
-      return { data: null, error }
-    }
-  }
-
+  // Sign out function
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
       router.push("/")
-    } catch (error) {
-      console.error("Error signing out:", error)
+    } catch (err) {
+      console.error("Error signing out:", err)
     }
   }
 
+  // Context value
   const value = {
     user,
     session,
     isLoading,
-    isAnonymous,
-    signUp,
     signIn,
+    signUp,
     signOut,
     subscription,
-    updateSubscription,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -336,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context

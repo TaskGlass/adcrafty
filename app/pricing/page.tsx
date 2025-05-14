@@ -12,12 +12,12 @@ export default function PricingPage() {
   // Calculate prices
   const prices = {
     pro: {
-      monthly: 19,
-      yearly: 19 * 12 * 0.8, // 20% off
+      monthly: 79,
+      yearly: 79 * 12 * 0.8, // 20% off
     },
     business: {
-      monthly: 49,
-      yearly: 49 * 12 * 0.8, // 20% off
+      monthly: 149,
+      yearly: 149 * 12 * 0.8, // 20% off
     },
   }
 
@@ -145,23 +145,7 @@ export default function PricingPage() {
                     </li>
                     <li className="flex items-start">
                       <X className="h-5 w-5 text-muted-foreground mr-2 mt-0.5 shrink-0" />
-                      <span className="text-muted-foreground">Team collaboration</span>
-                    </li>
-                    <li className="flex items-start">
-                      <X className="h-5 w-5 text-muted-foreground mr-2 mt-0.5 shrink-0" />
                       <span className="text-muted-foreground">Advanced customization</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>1 video ad per month</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Basic video formats (16:9 only)</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>15-second maximum duration</span>
                     </li>
                   </ul>
                 </div>
@@ -220,23 +204,7 @@ export default function PricingPage() {
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Image upload & editing</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Advanced customization options</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Unlimited video ads</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>All video formats and aspect ratios</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Up to 60-second video duration</span>
+                      <span>Image upload</span>
                     </li>
                   </ul>
                 </div>
@@ -266,11 +234,15 @@ export default function PricingPage() {
                   <ul className="mt-8 space-y-4">
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Everything in Pro</span>
+                      <span>Unlimited ad generations</span>
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Team collaboration (up to 5 users)</span>
+                      <span>Unlimited downloads</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
+                      <span>Everything in Pro</span>
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
@@ -286,35 +258,7 @@ export default function PricingPage() {
                     </li>
                     <li className="flex items-start">
                       <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>API access</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
                       <span>Dedicated account manager</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Unlimited ad generations</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Unlimited downloads</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Unlimited video ads</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>All video formats and aspect ratios</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Up to 3-minute video duration</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-2 mt-0.5 shrink-0" />
-                      <span>Advanced video editing features</span>
                     </li>
                   </ul>
                 </div>
@@ -382,12 +326,6 @@ export default function PricingPage() {
                     </td>
                   </tr>
                   <tr className="border-b border-border/40">
-                    <td className="py-4 px-6 text-left">Team Members</td>
-                    <td className="py-4 px-6 text-center">1</td>
-                    <td className="py-4 px-6 text-center">1</td>
-                    <td className="py-4 px-6 text-center">Up to 5</td>
-                  </tr>
-                  <tr className="border-b border-border/40">
                     <td className="py-4 px-6 text-left">Brand Asset Management</td>
                     <td className="py-4 px-6 text-center">
                       <X className="h-5 w-5 text-muted-foreground mx-auto" />
@@ -404,24 +342,6 @@ export default function PricingPage() {
                     <td className="py-4 px-6 text-center">Basic</td>
                     <td className="py-4 px-6 text-center">Advanced</td>
                     <td className="py-4 px-6 text-center">Enterprise</td>
-                  </tr>
-                  <tr className="border-b border-border/40">
-                    <td className="py-4 px-6 text-left">API Access</td>
-                    <td className="py-4 px-6 text-center">
-                      <X className="h-5 w-5 text-muted-foreground mx-auto" />
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <X className="h-5 w-5 text-muted-foreground mx-auto" />
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <Check className="h-5 w-5 text-primary mx-auto" />
-                    </td>
-                  </tr>
-                  <tr className="border-b border-border/40">
-                    <td className="py-4 px-6 text-left">Video Ads</td>
-                    <td className="py-4 px-6 text-center">1 per month, Basic formats, 15s</td>
-                    <td className="py-4 px-6 text-center">Unlimited, All formats, 60s</td>
-                    <td className="py-4 px-6 text-center">Unlimited, All formats, 3min, Advanced editing</td>
                   </tr>
                   <tr>
                     <td className="py-4 px-6 text-left">Support</td>

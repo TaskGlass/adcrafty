@@ -24,16 +24,16 @@ export default function Home() {
     },
     {
       name: "Pro",
-      price: { monthly: 19, yearly: 180 }, // 15/mo when paid yearly (20% discount)
+      price: { monthly: 79, yearly: 780 }, // 15/mo when paid yearly (20% discount)
       description: isYearly ? "Per year" : "Per month",
       popular: true,
       features: ["50 ad generations per month", "50 downloads per month", "All aspect ratios"],
     },
     {
       name: "Business",
-      price: { monthly: 49, yearly: 468 }, // 39/mo when paid yearly (20% discount)
+      price: { monthly: 149, yearly: 1428 }, // 39/mo when paid yearly (20% discount)
       description: isYearly ? "Per year" : "Per month",
-      features: ["Unlimited ad generations", "Unlimited downloads", "Team collaboration"],
+      features: ["Unlimited ad generations", "Unlimited downloads", "Advanced brand management"],
     },
   ]
 

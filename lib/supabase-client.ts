@@ -1,20 +1,21 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Check if environment variables are available
+// Get environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Throw a more descriptive error if environment variables are missing
+// Log environment variables for debugging (without exposing full keys)
+console.log("Supabase URL available:", !!supabaseUrl)
+console.log("Supabase Anon Key available:", !!supabaseAnonKey)
+
+// Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Supabase URL and anon key are required. Please make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables are set.",
-  )
+  console.error("Missing Supabase environment variables")
+  throw new Error("Supabase URL and anon key are required. Please check your environment variables.")
 }
 
-// Create Supabase client with session persistence in browser storage
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    storage: typeof window !== "undefined" ? sessionStorage : undefined,
-  },
-})
+// Create a simple Supabase client with minimal configuration
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Export a direct auth reference for easier debugging
+export const auth = supabase.auth

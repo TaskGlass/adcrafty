@@ -17,37 +17,40 @@ export interface Ad {
   adPoints?: string[]
 }
 
-// Update the createAd function to include the new fields
+// Update the createAd function to handle missing columns
 export async function createAd(ad: Ad): Promise<Ad> {
-  // Set default type to 'image' if not provided
-  const adWithType = {
-    ...ad,
-    type: ad.type || "image",
-  }
-  const { data, error } = await supabase
-    .from("ads")
-    .insert([
-      {
-        title: adWithType.title || "Untitled Ad",
-        prompt: adWithType.prompt,
-        image_url: adWithType.imageUrl,
-        aspect_ratio: adWithType.aspectRatio,
-        user_id: adWithType.userId,
-        type: adWithType.type || "image",
-        ad_copy: adWithType.adCopy || null,
-        ad_tone: adWithType.adTone || null,
-        ad_cta: adWithType.adCta || null,
-        ad_offer: adWithType.adOffer || null,
-        ad_points: adWithType.adPoints || null,
-      },
-    ])
-    .select()
+  try {
+    // Set default type to 'image' if not provided
+    const adWithType = {
+      ...ad,
+      type: ad.type || "image",
+    }
 
-  if (error) {
+    // Create a base insert object with only the required fields that we know exist
+    // This avoids any schema issues with newer fields that might not exist yet
+    const basicInsertObj = {
+      title: adWithType.title || "Untitled Ad",
+      prompt: adWithType.prompt,
+      image_url: adWithType.imageUrl,
+      aspect_ratio: adWithType.aspectRatio,
+      user_id: adWithType.userId,
+      type: adWithType.type || "image",
+    }
+
+    // First try with just the basic fields that should always exist
+    console.log("Inserting ad with basic fields only")
+    const { data, error } = await supabase.from("ads").insert([basicInsertObj]).select()
+
+    if (error) {
+      console.error("Error inserting ad with basic fields:", error)
+      throw error
+    }
+
+    return data[0] as Ad
+  } catch (error) {
+    console.error("Error in createAd:", error)
     throw error
   }
-
-  return data[0] as Ad
 }
 
 // Update the getUserAds function to map the new fields
@@ -62,6 +65,7 @@ export async function getUserAds(userId: string) {
     throw error
   }
 
+  // Safely map the data, handling missing columns
   return data.map((ad) => ({
     id: ad.id,
     title: ad.title,
@@ -70,11 +74,12 @@ export async function getUserAds(userId: string) {
     aspectRatio: ad.aspect_ratio,
     createdAt: ad.created_at,
     type: ad.type || "image",
-    adCopy: ad.ad_copy || null,
-    adTone: ad.ad_tone || null,
-    adCta: ad.ad_cta || null,
-    adOffer: ad.ad_offer || null,
-    adPoints: ad.ad_points || null,
+    // Use optional chaining to safely handle missing columns
+    adCopy: ad.ad_copy ?? null,
+    adTone: ad.ad_tone ?? null,
+    adCta: ad.ad_cta ?? null,
+    adOffer: ad.ad_offer ?? null,
+    adPoints: ad.ad_points ?? null,
   }))
 }
 
@@ -126,6 +131,7 @@ export async function getUserAdsByType(userId: string, type: "image" | "video") 
     throw error
   }
 
+  // Safely map the data, handling missing columns
   return data.map((ad) => ({
     id: ad.id,
     title: ad.title,
@@ -134,11 +140,11 @@ export async function getUserAdsByType(userId: string, type: "image" | "video") 
     aspectRatio: ad.aspect_ratio,
     createdAt: ad.created_at,
     type: ad.type,
-    adCopy: ad.ad_copy || null,
-    adTone: ad.ad_tone || null,
-    adCta: ad.ad_cta || null,
-    adOffer: ad.ad_offer || null,
-    adPoints: ad.ad_points || null,
+    adCopy: ad.ad_copy ?? null,
+    adTone: ad.ad_tone ?? null,
+    adCta: ad.ad_cta ?? null,
+    adOffer: ad.ad_offer ?? null,
+    adPoints: ad.ad_points ?? null,
   }))
 }
 

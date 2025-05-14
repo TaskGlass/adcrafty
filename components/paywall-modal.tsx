@@ -130,7 +130,7 @@ export function PaywallModal({ open, onClose, user, subscription, squareFormatOn
             </div>
             <h3 className="font-medium mb-2">Pro Plan</h3>
             <p className="text-2xl font-bold mb-4">
-              $19<span className="text-sm font-normal text-muted-foreground">/month</span>
+              $79<span className="text-sm font-normal text-muted-foreground">/month</span>
             </p>
 
             <ul className="space-y-2 mb-4">

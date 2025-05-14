@@ -58,12 +58,12 @@ export default function SettingsPage() {
   // Calculate prices and savings
   const prices = {
     pro: {
-      monthly: 19,
-      yearly: 19 * 12 * 0.8, // 20% off
+      monthly: 79,
+      yearly: 79 * 12 * 0.8, // 20% off
     },
     business: {
-      monthly: 49,
-      yearly: 49 * 12 * 0.8, // 20% off
+      monthly: 149,
+      yearly: 149 * 12 * 0.8, // 20% off
     },
   }
 

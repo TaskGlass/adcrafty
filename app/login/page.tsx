@@ -23,24 +23,53 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setErrorMessage(null)
+
+    // Validate inputs
+    if (!email.trim()) {
+      setErrorMessage("Email is required")
+      setIsLoading(false)
+      return
+    }
+
+    if (!password) {
+      setErrorMessage("Password is required")
+      setIsLoading(false)
+      return
+    }
 
     try {
-      const { error } = await signIn(email, password)
+      console.log("Login form submitted for:", email)
 
-      if (error) {
-        throw error
+      // Try direct authentication
+      const { success, error } = await signIn(email, password)
+
+      if (!success) {
+        setErrorMessage(error || "Authentication failed")
+        toast({
+          title: "Login failed",
+          description: error || "Invalid email or password",
+          variant: "destructive",
+        })
+      } else {
+        console.log("Login successful, redirecting...")
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        })
+        router.push("/dashboard")
       }
-
-      // Redirect to dashboard
-      router.push("/dashboard")
     } catch (error: any) {
+      console.error("Unexpected login error:", error)
+      setErrorMessage("An unexpected error occurred")
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
+        title: "Login error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -80,6 +109,12 @@ export default function LoginPage() {
               </Alert>
             )}
 
+            {errorMessage && (
+              <Alert className="bg-destructive/10 text-destructive border-destructive/20">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -90,7 +125,7 @@ export default function LoginPage() {
                   className="bg-background"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -106,7 +141,7 @@ export default function LoginPage() {
                   className="bg-background"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  disabled={isLoading}
                 />
               </div>
               <Button className="w-full bg-primary hover:bg-primary/90" disabled={isLoading} type="submit">

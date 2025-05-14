@@ -15,12 +15,12 @@ export default function DashboardNav() {
   const routes = [
     {
       href: "/dashboard",
-      label: "Create Ad",
+      label: "Create",
       icon: <PlusCircle className="mr-2 h-4 w-4" />,
     },
     {
       href: "/dashboard/library",
-      label: "Ad Library",
+      label: "Library",
       icon: <History className="mr-2 h-4 w-4" />,
     },
   ]
