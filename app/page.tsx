@@ -118,13 +118,13 @@ export default function Home() {
                   The Complete <br />
                   Ad Creation Platform
                 </h1>
-                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-6">
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-10">
                   Generate professional static image ads for Meta and Google in seconds. Try it now - no signup
                   required!
                 </p>
               </div>
               <motion.div
-                className="mt-16 flex flex-col sm:flex-row gap-4"
+                className="mt-24 flex flex-col sm:flex-row gap-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.7 }}

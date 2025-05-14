@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Loader2, Upload, Sparkles, Info, X, Globe, CheckCircle2, AlertTriangle, ImageIcon } from "lucide-react"
+import { Loader2, Upload, Sparkles, Info, X, Globe, CheckCircle2, AlertTriangle, ImageIcon, Hash } from "lucide-react"
 import { AspectRatioSelector } from "@/components/aspect-ratio-selector"
 import { UsageCounter } from "@/components/usage-counter"
 import { PaywallModal } from "@/components/paywall-modal"
@@ -32,7 +32,11 @@ import { Progress } from "@/components/ui/progress"
 
 const supabaseClient = createClientComponentClient()
 
-export function AdCreator() {
+interface AdCreatorProps {
+  contentType?: string
+}
+
+export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
   const router = useRouter()
   const { user, isAnonymous, subscription } = useAuth()
   const [title, setTitle] = useState("")
@@ -66,11 +70,26 @@ export function AdCreator() {
   const maxFreeUsage = 3
   const maxSquareFormatUsage = 3
 
-  // Add these new state variables after the existing useState declarations
+  // Social media specific state
+  const [socialCaption, setSocialCaption] = useState("")
+  const [generateHashtags, setGenerateHashtags] = useState(true)
+
+  // Static ad specific state
   const [adTone, setAdTone] = useState<string>("professional")
   const [adCta, setAdCta] = useState<string>("")
   const [adOffer, setAdOffer] = useState<string>("")
   const [adPoints, setAdPoints] = useState<string[]>(["", "", ""])
+
+  // Set default aspect ratios based on content type
+  useEffect(() => {
+    if (contentType === "social-media-creative") {
+      setSelectedAspectRatios(["1:1"]) // Default to square for social media
+    } else if (contentType === "stock-photo") {
+      setSelectedAspectRatios(["16:9"]) // Default to landscape for stock photos
+    } else {
+      setSelectedAspectRatios(["1:1"]) // Default to square for static ads
+    }
+  }, [contentType])
 
   // Add a function to update individual bullet points
   const updateAdPoint = (index: number, value: string) => {
@@ -117,7 +136,7 @@ export function AdCreator() {
       }
 
       // Add this code to fetch brand settings
-      if (!isAnonymous && user?.id) {
+      if (!isAnonymous && user?.id && contentType !== "stock-photo") {
         try {
           setIsFetchingBrandSettings(true)
           const settings = await getBrandSettings(user.id)
@@ -134,7 +153,7 @@ export function AdCreator() {
     }
 
     fetchData()
-  }, [user, isAnonymous])
+  }, [user, isAnonymous, contentType])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -173,12 +192,12 @@ export function AdCreator() {
         setBrandAnalysis(data.brandAnalysis)
         toast({
           title: "Website analyzed successfully",
-          description: "Brand information has been extracted and will be used to tailor your ads.",
+          description: "Brand information has been extracted and will be used to tailor your content.",
         })
 
         // If prompt is empty, suggest a prompt based on the brand analysis
         if (!prompt.trim()) {
-          const suggestedPrompt = `Create a professional ad for ${data.brandAnalysis.title || "this brand"} that highlights ${
+          const suggestedPrompt = `Create a professional ${contentType === "social-media-creative" ? "social media post" : "ad"} for ${data.brandAnalysis.title || "this brand"} that highlights ${
             data.brandAnalysis.description ? "their " + data.brandAnalysis.description : "their products or services"
           }.`
           setPrompt(suggestedPrompt)
@@ -268,12 +287,20 @@ export function AdCreator() {
           width = 1528
           height = 800
           break
+        case "3:2":
+          width = 1200
+          height = 800
+          break
+        case "2:3":
+          width = 800
+          height = 1200
+          break
       }
     }
 
     const placeholderText = promptText
-      ? `Sample Ad - Based on: ${promptText.substring(0, 30)}...`
-      : "Sample Ad - AI Generation Temporarily Unavailable"
+      ? `Sample ${contentType === "social-media-creative" ? "Social Media Post" : contentType === "stock-photo" ? "Stock Photo" : "Ad"} - Based on: ${promptText.substring(0, 30)}...`
+      : `Sample ${contentType === "social-media-creative" ? "Social Media Post" : contentType === "stock-photo" ? "Stock Photo" : "Ad"} - AI Generation Temporarily Unavailable`
 
     return `/placeholder.svg?height=${height}&width=${width}&text=${encodeURIComponent(placeholderText)}`
   }
@@ -283,7 +310,7 @@ export function AdCreator() {
     // Reset any previous errors
     setGenerationError(null)
     setCurrentAspectRatio(aspectRatio)
-    setGenerationStatus(`Generating ${aspectRatio} format with GPT-4...`)
+    setGenerationStatus(`Generating ${aspectRatio} format...`)
     setDebugLogs([])
 
     // Start progress simulation
@@ -293,23 +320,38 @@ export function AdCreator() {
     const payload = {
       prompt,
       aspectRatio,
-      brandAnalysis, // Include brand analysis
-      brandSettings, // Include brand settings if available
-      adTone,
-      adCta,
-      adOffer,
-      adPoints: adPoints.filter((point) => point.trim() !== ""),
+      contentType, // Include content type
+      // Include appropriate fields based on content type
+      ...(contentType === "static-image-ad"
+        ? {
+            adTone,
+            adCta,
+            adOffer,
+            adPoints: adPoints.filter((point) => point.trim() !== ""),
+            brandAnalysis,
+            brandSettings,
+          }
+        : {}),
+      ...(contentType === "social-media-creative"
+        ? {
+            socialCaption,
+            generateHashtags,
+            brandAnalysis,
+            brandSettings,
+          }
+        : {}),
+      // Stock photo doesn't need additional fields
     }
 
-    addDebugLog(`Generating ad with payload: ${JSON.stringify(payload, null, 2)}`)
+    addDebugLog(`Generating ${contentType} with payload: ${JSON.stringify(payload, null, 2)}`)
 
     try {
-      addDebugLog(`Attempting to generate ad image for ${aspectRatio} format using GPT-4`)
-      setGenerationStatus(`Generating ${aspectRatio} format with GPT-4...`)
+      addDebugLog(`Attempting to generate image for ${aspectRatio} format`)
+      setGenerationStatus(`Generating ${aspectRatio} format...`)
 
       // Set a timeout for the fetch request
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout for GPT-4
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -369,7 +411,7 @@ export function AdCreator() {
       // Always provide a fallback image even if everything fails
       const fallbackUrl = generateFallbackImageUrl(aspectRatio, prompt)
 
-      setGenerationError("Using a placeholder image due to technical issues with GPT-4 integration.")
+      setGenerationError("Using a placeholder image due to technical issues with the AI integration.")
       setPreviewImage(fallbackUrl)
       setGenerationStatus("Using fallback image")
 
@@ -378,7 +420,7 @@ export function AdCreator() {
         imageUrl: fallbackUrl,
         aspectRatio,
         isFallback: true,
-        message: "Using placeholder image due to technical issues with GPT-4 integration.",
+        message: "Using placeholder image due to technical issues with the AI integration.",
       }
     }
   }
@@ -386,8 +428,8 @@ export function AdCreator() {
   // Function to safely generate ad copy with fallback
   const generateAdCopyWithFallback = async () => {
     setAdCopyError(null)
-    setGenerationStatus("Generating ad copy with GPT-4...")
-    addDebugLog("Starting ad copy generation with GPT-4")
+    setGenerationStatus("Generating ad copy...")
+    addDebugLog("Starting ad copy generation")
 
     // Default fallback ad copy in case of errors
     const fallbackAdCopy = {
@@ -451,6 +493,71 @@ export function AdCreator() {
     }
   }
 
+  // Function to generate social media caption with hashtags
+  const generateSocialCaptionWithFallback = async () => {
+    setAdCopyError(null)
+    setGenerationStatus("Generating social media caption...")
+    addDebugLog("Starting social caption generation")
+
+    // Default fallback caption in case of errors
+    const fallbackCaption = "Check out our latest update! #brand #social"
+
+    try {
+      // First attempt with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+      const response = await fetch("/api/generate-social-caption", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          brandAnalysis,
+          brandSettings,
+          generateHashtags,
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        addDebugLog(`Social caption generation failed with status: ${response.status}`)
+        setAdCopyError("Caption generation failed. Using default caption instead.")
+        return fallbackCaption
+      }
+
+      // Try to parse the JSON response
+      try {
+        const data = await response.json()
+        addDebugLog(`Social caption generation response: ${JSON.stringify(data, null, 2)}`)
+
+        if (data.success) {
+          if (data.warning) {
+            setAdCopyError(data.warning)
+            addDebugLog(`Caption warning: ${data.warning}`)
+          }
+          return data.caption || fallbackCaption
+        } else {
+          setAdCopyError(data.error || "Failed to generate caption. Using default caption instead.")
+          addDebugLog(`Caption error: ${data.error}`)
+          return fallbackCaption
+        }
+      } catch (parseError) {
+        addDebugLog(`Error parsing caption response: ${parseError}`)
+        setAdCopyError("Error parsing caption response. Using default caption instead.")
+        return fallbackCaption
+      }
+    } catch (fetchError) {
+      addDebugLog(`Error fetching caption: ${fetchError}`)
+      setAdCopyError("Network error while generating caption instead.")
+      return fallbackCaption
+    }
+  }
+
   const handleGenerate = async () => {
     // Check if user has reached limit and needs to upgrade
     const hasUnlimitedAccess =
@@ -484,7 +591,7 @@ export function AdCreator() {
     if (!prompt.trim()) {
       toast({
         title: "Please enter a prompt",
-        description: "You need to describe the ad you want to create.",
+        description: `You need to describe the ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"} you want to create.`,
         variant: "destructive",
       })
       return
@@ -493,7 +600,7 @@ export function AdCreator() {
     if (!title.trim()) {
       toast({
         title: "Please enter a title",
-        description: "You need to provide a title for your ad.",
+        description: `You need to provide a title for your ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"}.`,
         variant: "destructive",
       })
       return
@@ -505,13 +612,15 @@ export function AdCreator() {
     setGenerationError(null)
     setPreviewImage(null)
     setGenerationProgress(0)
-    setGenerationStatus("Starting generation with GPT-4...")
+    setGenerationStatus("Starting generation...")
     setDebugLogs([])
-    addDebugLog("Starting ad generation process")
+    addDebugLog(`Starting ${contentType} generation process`)
 
-    // Generate ad copy if enabled
+    // Generate appropriate copy based on content type
     let adCopy = null
-    if (generateAdCopy) {
+    let caption = null
+
+    if (contentType === "static-image-ad" && generateAdCopy) {
       try {
         adCopy = await generateAdCopyWithFallback()
         setGeneratedAdCopy(adCopy)
@@ -530,7 +639,7 @@ export function AdCreator() {
         // Continue with image generation even if copy generation fails
         toast({
           title: "Ad Copy Generation Issue",
-          description: "There was a problem generating ad copy with GPT-4, but we'll continue with your image.",
+          description: "There was a problem generating ad copy, but we'll continue with your image.",
           variant: "default",
         })
 
@@ -540,6 +649,32 @@ export function AdCreator() {
           headlines: ["Headline 1", "Headline 2", "Headline 3", "Headline 4", "Headline 5"],
           descriptions: ["Description 1", "Description 2"],
         }
+      }
+    } else if (contentType === "social-media-creative" && generateHashtags) {
+      try {
+        caption = await generateSocialCaptionWithFallback()
+        setSocialCaption(caption)
+        addDebugLog("Social caption generated successfully")
+
+        if (adCopyError) {
+          toast({
+            title: "Caption Warning",
+            description: adCopyError,
+            variant: "default",
+          })
+        }
+      } catch (error) {
+        console.error("Error generating social caption:", error)
+        addDebugLog(`Error generating social caption: ${error}`)
+        // Continue with image generation even if caption generation fails
+        toast({
+          title: "Caption Generation Issue",
+          description: "There was a problem generating the social media caption, but we'll continue with your image.",
+          variant: "default",
+        })
+
+        // Use fallback caption
+        caption = "Check out our latest update! #brand #social"
       }
     }
 
@@ -575,10 +710,10 @@ export function AdCreator() {
                 prompt,
                 imageUrl: data.imageUrl,
                 aspectRatio,
-                type: "image",
+                type: contentType,
                 // Don't include advanced fields for anonymous users
               })
-              addDebugLog(`Saved ad to local storage for anonymous user`)
+              addDebugLog(`Saved to local storage for anonymous user`)
             } else if (user?.id) {
               try {
                 // Save to Supabase for authenticated users - but only with basic fields
@@ -589,10 +724,10 @@ export function AdCreator() {
                   imageUrl: data.imageUrl,
                   aspectRatio,
                   userId: user.id,
-                  type: "image",
+                  type: contentType,
                   // Intentionally omitting adCopy, adTone, adCta, adOffer, adPoints
                 })
-                addDebugLog(`Saved ad to database for user: ${user.id}`)
+                addDebugLog(`Saved to database for user: ${user.id}`)
               } catch (saveError: any) {
                 addDebugLog(`Error saving to database: ${saveError.message}`)
                 console.error("Error saving ad to database:", saveError)
@@ -628,7 +763,12 @@ export function AdCreator() {
       if (successCount > 0) {
         // Show the ad performance analyzer for the first generated image
         setGeneratedAdImage(generatedImages[0]?.url || null)
-        setShowPerformanceAnalyzer(true)
+
+        // Only show performance analyzer for ads, not stock photos
+        if (contentType !== "stock-photo") {
+          setShowPerformanceAnalyzer(true)
+        }
+
         addDebugLog(`Generation completed successfully: ${successCount} images generated`)
 
         // Update usage counts
@@ -645,8 +785,8 @@ export function AdCreator() {
         }
 
         toast({
-          title: "Ad generation complete!",
-          description: `Successfully generated ${successCount} ad variations with GPT-4.`,
+          title: "Generation complete!",
+          description: `Successfully generated ${successCount} ${contentType === "social-media-creative" ? "social media" : contentType === "stock-photo" ? "stock photo" : "ad"} variations.`,
         })
 
         // Redirect to library after a short delay
@@ -657,7 +797,7 @@ export function AdCreator() {
         addDebugLog(`Generation failed: No successful images generated`)
         toast({
           title: "Generation failed",
-          description: "Failed to generate any ads with GPT-4. Please try again.",
+          description: "Failed to generate any images. Please try again.",
           variant: "destructive",
         })
       }
@@ -665,7 +805,7 @@ export function AdCreator() {
       addDebugLog(`Error in generation process: ${error.message}`)
       toast({
         title: "Error",
-        description: "Failed to generate ads with GPT-4. Please try again.",
+        description: "Failed to generate images. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -676,13 +816,22 @@ export function AdCreator() {
     }
   }
 
-  const promptTips = [
-    "Be specific about the product or service you're advertising",
-    "Mention the desired mood or emotion (e.g., energetic, calm, professional)",
-    "Include details about colors or visual style",
-    "Specify if you want text or people in the image",
-    "Describe the setting or background",
-  ]
+  const promptTips =
+    contentType === "stock-photo"
+      ? [
+          "Be specific about the subject and composition",
+          "Mention the desired lighting (e.g., natural, studio, dramatic)",
+          "Include details about the mood or atmosphere",
+          "Specify if you want people or objects in the image",
+          "Describe the setting or background in detail",
+        ]
+      : [
+          "Be specific about the product or service you're advertising",
+          "Mention the desired mood or emotion (e.g., energetic, calm, professional)",
+          "Include details about colors or visual style",
+          "Specify if you want text or people in the image",
+          "Describe the setting or background",
+        ]
 
   // Handle when a user tries to select a disabled aspect ratio
   const handleDisabledAspectRatio = (id: string) => {
@@ -690,8 +839,61 @@ export function AdCreator() {
     setShowPaywall(true)
   }
 
-  // Get available aspect ratios based on subscription and user status
+  // Get available aspect ratios based on subscription, user status, and content type
   const getAvailableAspectRatios = () => {
+    // For social media creatives, only show relevant aspect ratios
+    if (contentType === "social-media-creative") {
+      // All users with Pro or Business subscription
+      if (
+        subscription.status === "pro" ||
+        subscription.status === "business" ||
+        user?.email?.toLowerCase() === "cameronnpost@outlook.com"
+      ) {
+        return [
+          { id: "1:1", label: "1:1 (Instagram/Facebook Square)" },
+          { id: "4:5", label: "4:5 (Instagram/Facebook Portrait)" },
+          { id: "1.91:1", label: "1.91:1 (LinkedIn)" },
+          { id: "9:16", label: "9:16 (Story/Reels)" },
+        ]
+      }
+
+      // Free users get limited options
+      return [
+        { id: "1:1", label: "1:1 (Instagram/Facebook Square)" },
+        { id: "9:16", label: "9:16 (Story/Reels)" },
+        { id: "4:5", label: "4:5 (Instagram/Facebook Portrait)", disabled: true },
+        { id: "1.91:1", label: "1.91:1 (LinkedIn)", disabled: true },
+      ]
+    }
+
+    // For stock photos, show all common aspect ratios
+    if (contentType === "stock-photo") {
+      // All users with Pro or Business subscription
+      if (
+        subscription.status === "pro" ||
+        subscription.status === "business" ||
+        user?.email?.toLowerCase() === "cameronnpost@outlook.com"
+      ) {
+        return [
+          { id: "1:1", label: "1:1 (Square)" },
+          { id: "4:5", label: "4:5 (Portrait)" },
+          { id: "16:9", label: "16:9 (Landscape)" },
+          { id: "3:2", label: "3:2 (Standard)" },
+          { id: "2:3", label: "2:3 (Vertical)" },
+        ]
+      }
+
+      // Free users get limited options
+      return [
+        { id: "1:1", label: "1:1 (Square)" },
+        { id: "16:9", label: "16:9 (Landscape)" },
+        { id: "4:5", label: "4:5 (Portrait)", disabled: true },
+        { id: "3:2", label: "3:2 (Standard)", disabled: true },
+        { id: "2:3", label: "2:3 (Vertical)", disabled: true },
+      ]
+    }
+
+    // Default for static image ads - all aspect ratios
     // All users with Pro or Business subscription
     if (
       subscription.status === "pro" ||
@@ -700,42 +902,24 @@ export function AdCreator() {
     ) {
       return [
         { id: "1:1", label: "1:1 (Square)" },
-        { id: "4:5", label: "4:5 (Portrait)" },
+        { id: "4:5", label: "4:5 (Portrait)", disabled: true },
         { id: "9:16", label: "9:16 (Story)" },
-        { id: "16:9", label: "16:9 (Landscape)" },
-        { id: "1.91:1", label: "1.91:1 (Facebook)" },
-        // Google Display Ad Sizes
-        { id: "300x250", label: "Medium Rectangle (300×250)" },
-        { id: "336x280", label: "Large Rectangle (336×280)" },
-        { id: "728x90", label: "Leaderboard (728×90)" },
-        { id: "300x600", label: "Half Page (300×600)" },
-        { id: "250x250", label: "Square (250×250)" },
-        { id: "200x200", label: "Small Square (200×200)" },
-        { id: "160x600", label: "Wide Skyscraper (160×600)" },
-        { id: "320x100", label: "Large Mobile Banner (320×100)" },
+        { id: "16:9", label: "16:9 (Landscape)", disabled: true },
+        { id: "1.91:1", label: "1.91:1 (Facebook)", disabled: true },
+        // Google Display Ad Sizes - all disabled for free users
+        { id: "300x250", label: "Medium Rectangle", pixelDimensions: "300×250", disabled: true },
+        { id: "336x280", label: "Large Rectangle", pixelDimensions: "336×280", disabled: true },
+        { id: "728x90", label: "Leaderboard", pixelDimensions: "728×90", disabled: true },
+        { id: "300x600", label: "Half Page", pixelDimensions: "300×600", disabled: true },
+        { id: "250x250", label: "Square", pixelDimensions: "250×250", disabled: true },
+        { id: "200x200", label: "Small Square", pixelDimensions: "200×200", disabled: true },
+        { id: "160x600", label: "Wide Skyscraper", pixelDimensions: "160×600", disabled: true },
+        { id: "320x100", label: "Large Mobile Banner", pixelDimensions: "320×100", disabled: true },
       ]
     }
-
-    // Anonymous users and free users only get 1:1 and 9:16 formats
-    // Other formats are shown but disabled
-    return [
-      { id: "1:1", label: "1:1 (Square)" },
-      { id: "4:5", label: "4:5 (Portrait)", disabled: true },
-      { id: "9:16", label: "9:16 (Story)" },
-      { id: "16:9", label: "16:9 (Landscape)", disabled: true },
-      { id: "1.91:1", label: "1.91:1 (Facebook)", disabled: true },
-      // Google Display Ad Sizes - all disabled for free users
-      { id: "300x250", label: "Medium Rectangle", pixelDimensions: "300×250", disabled: true },
-      { id: "336x280", label: "Large Rectangle", pixelDimensions: "336×280", disabled: true },
-      { id: "728x90", label: "Leaderboard", pixelDimensions: "728×90", disabled: true },
-      { id: "300x600", label: "Half Page", pixelDimensions: "300×600", disabled: true },
-      { id: "250x250", label: "Square", pixelDimensions: "250×250", disabled: true },
-      { id: "200x200", label: "Small Square", pixelDimensions: "200×200", disabled: true },
-      { id: "160x600", label: "Wide Skyscraper", pixelDimensions: "160×600", disabled: true },
-      { id: "320x100", label: "Large Mobile Banner", pixelDimensions: "320×100", disabled: true },
-    ]
   }
 
+  // Render different UI based on content type
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -743,7 +927,13 @@ export function AdCreator() {
           <CardContent className="p-4 sm:p-6 md:p-8">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-xl font-bold">Create New Ad</h2>
+                <h2 className="text-xl font-bold">
+                  {contentType === "social-media-creative"
+                    ? "Create Social Media Creative"
+                    : contentType === "stock-photo"
+                      ? "Create Stock Photo"
+                      : "Create Static Image Ad"}
+                </h2>
                 <div className="flex items-center gap-4">
                   <UsageCounter
                     current={selectedAspectRatios.includes("1:1") ? squareFormatUsage : usageCount}
@@ -765,12 +955,10 @@ export function AdCreator() {
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   <AlertDescription>
                     <span className="font-medium">Try before you sign up!</span> You can create up to 3 square format
-                    (1:1) ads without an account.
+                    (1:1) images without an account.
                   </AlertDescription>
                 </Alert>
               )}
-
-              {/* New alert to inform users about the GPT-4 model */}
 
               {adCopyError && (
                 <Alert className="bg-yellow-50 border-yellow-200">
@@ -806,7 +994,7 @@ export function AdCreator() {
                 <div className="relative rounded-lg overflow-hidden border border-border/40">
                   <img
                     src={previewImage || "/placeholder.svg"}
-                    alt="Preview of generated ad"
+                    alt="Preview of generated content"
                     className="w-full h-auto object-contain"
                   />
                   <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">Preview</div>
@@ -834,142 +1022,162 @@ export function AdCreator() {
 
               <div className="space-y-6 pt-4">
                 <div className="space-y-3">
-                  <Label htmlFor="title">Ad Title</Label>
+                  <Label htmlFor="title">
+                    {contentType === "social-media-creative"
+                      ? "Social Media Post Title"
+                      : contentType === "stock-photo"
+                        ? "Stock Photo Title"
+                        : "Ad Title"}
+                  </Label>
                   <Input
                     id="title"
-                    placeholder="Enter a title for your ad"
+                    placeholder={`Enter a title for your ${
+                      contentType === "social-media-creative"
+                        ? "social media post"
+                        : contentType === "stock-photo"
+                          ? "stock photo"
+                          : "ad"
+                    }`}
                     className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                 </div>
 
-                {/* Website URL input */}
-                <div className="space-y-3">
-                  <Label htmlFor="website-url" className="flex items-center gap-2">
-                    Website URL
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Enter your website URL to analyze your brand. This helps create ads that match your brand
-                            identity.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="website-url"
-                      placeholder="https://your-website.com"
-                      className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
-                      value={websiteUrl}
-                      onChange={(e) => setWebsiteUrl(e.target.value)}
-                      disabled={isAnalyzingWebsite}
-                    />
-                    <Button
-                      onClick={analyzeWebsite}
-                      disabled={isAnalyzingWebsite || !websiteUrl}
-                      className="whitespace-nowrap"
-                    >
-                      {isAnalyzingWebsite ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Globe className="mr-2 h-4 w-4" />
-                          Analyze
-                        </>
-                      )}
-                    </Button>
+                {/* Website URL input - only show for ad and social media, not for stock photos */}
+                {contentType !== "stock-photo" && (
+                  <div className="space-y-3">
+                    <Label htmlFor="website-url" className="flex items-center gap-2">
+                      Shopify/Amazon Product Page URL, or Website URL
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Enter your product page or website URL to analyze your brand. This helps create content
+                              that matches your brand identity.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="website-url"
+                        placeholder="https://your-store.com/products/your-product"
+                        className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        disabled={isAnalyzingWebsite}
+                      />
+                      <Button
+                        onClick={analyzeWebsite}
+                        disabled={isAnalyzingWebsite || !websiteUrl}
+                        className="whitespace-nowrap"
+                      >
+                        {isAnalyzingWebsite ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="mr-2 h-4 w-4" />
+                            Analyze
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Brand analysis result */}
-                <AnimatePresence>
-                  {brandAnalysis && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Alert className="bg-primary/10 border-primary/20">
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                        <AlertDescription className="flex flex-col gap-1">
-                          <span className="font-medium">Brand analysis complete!</span>
-                          <span className="text-sm">
-                            We've analyzed{" "}
-                            <span className="font-medium">{brandAnalysis.title || brandAnalysis.url}</span> and will use
-                            this information to tailor your ads.
-                          </span>
-                          {brandAnalysis.description && (
-                            <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              Description: {brandAnalysis.description}
+                {/* Brand analysis result - only show for ad and social media, not for stock photos */}
+                {contentType !== "stock-photo" && (
+                  <AnimatePresence>
+                    {brandAnalysis && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Alert className="bg-primary/10 border-primary/20">
+                          <CheckCircle2 className="h-4 w-4 text-primary" />
+                          <AlertDescription className="flex flex-col gap-1">
+                            <span className="font-medium">Brand analysis complete!</span>
+                            <span className="text-sm">
+                              We've analyzed{" "}
+                              <span className="font-medium">{brandAnalysis.title || brandAnalysis.url}</span> and will
+                              use this information to tailor your content.
                             </span>
-                          )}
-                        </AlertDescription>
-                      </Alert>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                            {brandAnalysis.description && (
+                              <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                Description: {brandAnalysis.description}
+                              </span>
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
 
-                {/* Brand settings preview */}
-                <AnimatePresence>
-                  {brandSettings && brandSettings.primaryColor && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Alert className="bg-primary/10 border-primary/20">
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                        <AlertDescription className="flex flex-col gap-1">
-                          <span className="font-medium">Brand settings applied!</span>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {brandSettings.primaryColor && (
-                              <div className="flex items-center gap-1.5">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: brandSettings.primaryColor }}
-                                ></div>
-                                <span className="text-xs">Primary</span>
-                              </div>
+                {/* Brand settings preview - only show for ad and social media, not for stock photos */}
+                {contentType !== "stock-photo" && (
+                  <AnimatePresence>
+                    {brandSettings && brandSettings.primaryColor && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Alert className="bg-primary/10 border-primary/20">
+                          <CheckCircle2 className="h-4 w-4 text-primary" />
+                          <AlertDescription className="flex flex-col gap-1">
+                            <span className="font-medium">Brand settings applied!</span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {brandSettings.primaryColor && (
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: brandSettings.primaryColor }}
+                                  ></div>
+                                  <span className="text-xs">Primary</span>
+                                </div>
+                              )}
+                              {brandSettings.secondaryColor && (
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: brandSettings.secondaryColor }}
+                                  ></div>
+                                  <span className="text-xs">Secondary</span>
+                                </div>
+                              )}
+                              {brandSettings.accentColor && (
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: brandSettings.accentColor }}
+                                  ></div>
+                                  <span className="text-xs">Accent</span>
+                                </div>
+                              )}
+                            </div>
+                            {brandSettings.brandTone && (
+                              <span className="text-xs text-muted-foreground mt-1">
+                                Tone: {brandSettings.brandTone}
+                              </span>
                             )}
-                            {brandSettings.secondaryColor && (
-                              <div className="flex items-center gap-1.5">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: brandSettings.secondaryColor }}
-                                ></div>
-                                <span className="text-xs">Secondary</span>
-                              </div>
-                            )}
-                            {brandSettings.accentColor && (
-                              <div className="flex items-center gap-1.5">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: brandSettings.accentColor }}
-                                ></div>
-                                <span className="text-xs">Accent</span>
-                              </div>
-                            )}
-                          </div>
-                          {brandSettings.brandTone && (
-                            <span className="text-xs text-muted-foreground mt-1">Tone: {brandSettings.brandTone}</span>
-                          )}
-                        </AlertDescription>
-                      </Alert>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                          </AlertDescription>
+                        </Alert>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
 
                 <Tabs defaultValue="prompt" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-background">
@@ -991,7 +1199,12 @@ export function AdCreator() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="prompt" className="flex items-center gap-2">
-                          Describe your ad
+                          Describe your{" "}
+                          {contentType === "social-media-creative"
+                            ? "social media post"
+                            : contentType === "stock-photo"
+                              ? "stock photo"
+                              : "ad"}
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1016,9 +1229,19 @@ export function AdCreator() {
                           size="sm"
                           className="text-xs text-primary"
                           onClick={() => {
-                            setPrompt(
-                              "A professional advertisement for a modern product with clean design, vibrant colors, and clear messaging. The image should be high quality and visually appealing.",
-                            )
+                            if (contentType === "social-media-creative") {
+                              setPrompt(
+                                "Create an engaging social media post featuring our product with vibrant colors and a modern aesthetic. The image should be visually appealing and optimized for social media.",
+                              )
+                            } else if (contentType === "stock-photo") {
+                              setPrompt(
+                                "A professional, high-quality stock photo with clean composition and natural lighting. The image should be versatile and suitable for various business contexts.",
+                              )
+                            } else {
+                              setPrompt(
+                                "A professional advertisement for a modern product with clean design, vibrant colors, and clear messaging. The image should be high quality and visually appealing.",
+                              )
+                            }
                           }}
                         >
                           <Sparkles className="mr-1 h-3 w-3" />
@@ -1027,7 +1250,7 @@ export function AdCreator() {
                       </div>
                       <Textarea
                         id="prompt"
-                        placeholder="Describe the ad you want to create in detail. For example: A modern smartphone on a minimalist desk with soft lighting, showing a shopping app, perfect for an e-commerce ad."
+                        placeholder={`Describe the ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"} you want to create in detail.`}
                         className="min-h-[120px] bg-background resize-y transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -1069,10 +1292,17 @@ export function AdCreator() {
 
                   <TabsContent value="images" className="space-y-4 pt-4">
                     <div className="space-y-3">
-                      <Label htmlFor="prompt-with-images">Describe your ad</Label>
+                      <Label htmlFor="prompt-with-images">
+                        Describe your{" "}
+                        {contentType === "social-media-creative"
+                          ? "social media post"
+                          : contentType === "stock-photo"
+                            ? "stock photo"
+                            : "ad"}
+                      </Label>
                       <Textarea
                         id="prompt-with-images"
-                        placeholder="Describe how you want to use the uploaded images in your ad."
+                        placeholder="Describe how you want to use the uploaded images in your content."
                         className="min-h-[120px] bg-background resize-y transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -1137,172 +1367,215 @@ export function AdCreator() {
                   />
                   {isAnonymous ? (
                     <p className="text-xs text-muted-foreground">
-                      Guest users can only use 1:1 and 9:16 formats. Sign up for more options.
+                      Guest users can only use 1:1 and {contentType === "stock-photo" ? "16:9" : "9:16"} formats. Sign
+                      up for more options.
                     </p>
                   ) : subscription.status === "free" ? (
                     <p className="text-xs text-muted-foreground">
-                      Free plan: Only 1:1 and 9:16 formats available. Upgrade to Pro or Business for all formats.
+                      Free plan: Only 1:1 and {contentType === "stock-photo" ? "16:9" : "9:16"} formats available.
+                      Upgrade to Pro or Business for all formats.
                     </p>
                   ) : null}
                 </div>
 
-                <div className="space-y-6">
-                  {/* Ad Tone Selection */}
-                  <div className="space-y-3">
-                    <Label className="flex items-center gap-2">
-                      Ad Tone
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Select the tone of voice for your ad. This affects how your message is conveyed.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {["Professional", "Friendly", "Exciting", "Luxury", "Minimalist", "Bold"].map((tone) => (
-                        <Button
-                          key={tone}
-                          type="button"
-                          variant={adTone.toLowerCase() === tone.toLowerCase() ? "default" : "outline"}
-                          className={`h-10 ${
-                            adTone.toLowerCase() === tone.toLowerCase() ? "bg-primary text-white" : "bg-background"
-                          }`}
-                          onClick={() => setAdTone(tone.toLowerCase())}
-                        >
-                          {tone}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Call to Action Input */}
-                  <div className="space-y-3">
-                    <Label htmlFor="ad-cta" className="flex items-center gap-2">
-                      Call to Action
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              The action you want viewers to take (e.g., "Shop Now", "Learn More", "Sign Up Today")
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
-                    <Input
-                      id="ad-cta"
-                      placeholder="e.g., Shop Now, Learn More, Sign Up Today"
-                      className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
-                      value={adCta}
-                      onChange={(e) => setAdCta(e.target.value)}
-                      maxLength={20}
-                    />
-                    <div className="text-xs text-right text-muted-foreground">{adCta.length}/20 characters</div>
-                  </div>
-
-                  {/* Special Offer Input */}
-                  <div className="space-y-3">
-                    <Label htmlFor="ad-offer" className="flex items-center gap-2">
-                      Special Offer
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Add a promotional offer to highlight in your ad (e.g., "50% Off", "Free Shipping")
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
-                    <Input
-                      id="ad-offer"
-                      placeholder="e.g., 50% Off, Free Shipping, Limited Time Offer"
-                      className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
-                      value={adOffer}
-                      onChange={(e) => setAdOffer(e.target.value)}
-                      maxLength={25}
-                    />
-                    <div className="text-xs text-right text-muted-foreground">{adOffer.length}/25 characters</div>
-                  </div>
-
-                  {/* Key Points Inputs */}
-                  <div className="space-y-3">
-                    <Label className="flex items-center gap-2">
-                      Key Points (max 25 characters each)
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Add up to three short bullet points to highlight in your ad</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
-                    <div className="space-y-2">
-                      {[0, 1, 2].map((index) => (
-                        <div key={index} className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-muted-foreground min-w-[20px]">{index + 1}.</span>
-                            <Input
-                              placeholder={`Key point ${index + 1}`}
-                              className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
-                              value={adPoints[index]}
-                              onChange={(e) => updateAdPoint(index, e.target.value)}
-                              maxLength={25}
-                            />
-                          </div>
-                          <div className="text-xs text-right text-muted-foreground ml-7 mt-1">
-                            {adPoints[index].length}/25 characters
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    Meta Ad Copy
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            We'll automatically generate Meta ad copy (primary text, headlines, and descriptions) to
-                            accompany your image ad.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </Label>
-                  <div className="bg-background/50 border border-border/40 rounded-md p-4">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Your ad copy will be generated based on your prompt and brand information.
-                    </p>
-                    <div className="flex items-center">
-                      <Switch id="generate-copy" checked={generateAdCopy} onCheckedChange={setGenerateAdCopy} />
-                      <Label htmlFor="generate-copy" className="ml-2">
-                        Generate Meta ad copy with my image
+                {/* Conditional rendering based on content type */}
+                {contentType === "static-image-ad" ? (
+                  // Static Image Ad specific options
+                  <div className="space-y-6">
+                    {/* Ad Tone Selection */}
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        Ad Tone
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">
+                                Select the tone of voice for your ad. This affects how your message is conveyed.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {["Professional", "Friendly", "Exciting", "Luxury", "Minimalist", "Bold"].map((tone) => (
+                          <Button
+                            key={tone}
+                            type="button"
+                            variant={adTone.toLowerCase() === tone.toLowerCase() ? "default" : "outline"}
+                            className={`h-10 ${
+                              adTone.toLowerCase() === tone.toLowerCase() ? "bg-primary text-white" : "bg-background"
+                            }`}
+                            onClick={() => setAdTone(tone.toLowerCase())}
+                          >
+                            {tone}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Call to Action Input */}
+                    <div className="space-y-3">
+                      <Label htmlFor="ad-cta" className="flex items-center gap-2">
+                        Call to Action
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">
+                                The action you want viewers to take (e.g., "Shop Now", "Learn More", "Sign Up Today")
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Label>
+                      <Input
+                        id="ad-cta"
+                        placeholder="e.g., Shop Now, Learn More, Sign Up Today"
+                        className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                        value={adCta}
+                        onChange={(e) => setAdCta(e.target.value)}
+                        maxLength={20}
+                      />
+                      <div className="text-xs text-right text-muted-foreground">{adCta.length}/20 characters</div>
+                    </div>
+
+                    {/* Special Offer Input */}
+                    <div className="space-y-3">
+                      <Label htmlFor="ad-offer" className="flex items-center gap-2">
+                        Special Offer
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">
+                                Add a promotional offer to highlight in your ad (e.g., "50% Off", "Free Shipping")
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Label>
+                      <Input
+                        id="ad-offer"
+                        placeholder="e.g., 50% Off, Free Shipping, Limited Time Offer"
+                        className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                        value={adOffer}
+                        onChange={(e) => setAdOffer(e.target.value)}
+                        maxLength={25}
+                      />
+                      <div className="text-xs text-right text-muted-foreground">{adOffer.length}/25 characters</div>
+                    </div>
+
+                    {/* Key Points Inputs */}
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        Key Points (max 25 characters each)
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Add up to three short bullet points to highlight in your ad</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Label>
+                      <div className="space-y-2">
+                        {[0, 1, 2].map((index) => (
+                          <div key={index} className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground min-w-[20px]">
+                                {index + 1}.
+                              </span>
+                              <Input
+                                placeholder={`Key point ${index + 1}`}
+                                className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                                value={adPoints[index]}
+                                onChange={(e) => updateAdPoint(index, e.target.value)}
+                                maxLength={25}
+                              />
+                            </div>
+                            <div className="text-xs text-right text-muted-foreground ml-7 mt-1">
+                              {adPoints[index].length}/25 characters
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        Meta Ad Copy
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">
+                                We'll automatically generate Meta ad copy (primary text, headlines, and descriptions) to
+                                accompany your image ad.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Label>
+                      <div className="bg-background/50 border border-border/40 rounded-md p-4">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Your ad copy will be generated based on your prompt and brand information.
+                        </p>
+                        <div className="flex items-center">
+                          <Switch id="generate-copy" checked={generateAdCopy} onCheckedChange={setGenerateAdCopy} />
+                          <Label htmlFor="generate-copy" className="ml-2">
+                            Generate Meta ad copy with my image
+                          </Label>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : contentType === "social-media-creative" ? (
+                  // Social Media Creative specific options
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      Social Media Caption
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              We'll automatically generate a social media caption with hashtags to accompany your image.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <div className="bg-background/50 border border-border/40 rounded-md p-4">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Your caption will be generated based on your prompt and brand information.
+                      </p>
+                      <div className="flex items-center">
+                        <Switch
+                          id="generate-hashtags"
+                          checked={generateHashtags}
+                          onCheckedChange={setGenerateHashtags}
+                        />
+                        <Label htmlFor="generate-hashtags" className="ml-2 flex items-center">
+                          <Hash className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                          Generate caption with hashtags
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
                   <Button
@@ -1338,8 +1611,8 @@ export function AdCreator() {
                   className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-sm"
                 >
                   <p>
-                    <strong>Note:</strong> As a guest user, your ads are stored locally in your browser. To keep them
-                    permanently and access them from any device,{" "}
+                    <strong>Note:</strong> As a guest user, your content is stored locally in your browser. To keep it
+                    permanently and access it from any device,{" "}
                     <Link href="/signup" className="text-primary hover:underline">
                       create an account
                     </Link>
@@ -1359,7 +1632,7 @@ export function AdCreator() {
         subscription={subscription}
         squareFormatOnly={paywallTriggerRatio !== null}
       />
-      {showPerformanceAnalyzer && generatedAdImage && (
+      {showPerformanceAnalyzer && generatedAdImage && contentType !== "stock-photo" && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
