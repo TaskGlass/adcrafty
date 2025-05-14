@@ -5,7 +5,6 @@ import type React from "react"
 import Link from "next/link"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,11 +52,9 @@ export default function DashboardHeader({ heading, text, children }: DashboardHe
         {!isAnonymous && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.user_metadata?.avatar_url || "/placeholder.svg"} alt={user.email || "User"} />
-                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                </Avatar>
+              <Button variant="outline" size="sm" className="gap-1">
+                <User className="h-4 w-4" />
+                <span>Account</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>

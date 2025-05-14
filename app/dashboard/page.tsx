@@ -3,7 +3,7 @@ import DashboardHeader from "@/components/dashboard-header"
 import DashboardShell from "@/components/dashboard-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart2, Sparkles, ImageIcon, Share2 } from "lucide-react"
+import { BarChart2, Sparkles, ImageIcon, Share2, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="create" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Using flex and flex-col with justify-between to align buttons */}
             <Card className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col">
               <div>
@@ -108,6 +108,26 @@ export default function DashboardPage() {
               <div className="mt-auto p-6 pt-0">
                 <Button className="w-full" onClick={() => handleCreateOption("stock-photo")}>
                   Create Stock Photo
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col">
+              <div>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                    Product Photos
+                  </CardTitle>
+                  <CardDescription>Create professional product photography for e-commerce</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">Perfect for online stores, marketplaces, and catalogs</p>
+                </CardContent>
+              </div>
+              <div className="mt-auto p-6 pt-0">
+                <Button className="w-full" onClick={() => handleCreateOption("product-photo")}>
+                  Create Product Photo
                 </Button>
               </div>
             </Card>

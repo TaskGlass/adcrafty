@@ -86,6 +86,8 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
       setSelectedAspectRatios(["1:1"]) // Default to square for social media
     } else if (contentType === "stock-photo") {
       setSelectedAspectRatios(["16:9"]) // Default to landscape for stock photos
+    } else if (contentType === "product-photo") {
+      setSelectedAspectRatios(["1:1"]) // Default to square for product photos
     } else {
       setSelectedAspectRatios(["1:1"]) // Default to square for static ads
     }
@@ -299,8 +301,8 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
     }
 
     const placeholderText = promptText
-      ? `Sample ${contentType === "social-media-creative" ? "Social Media Post" : contentType === "stock-photo" ? "Stock Photo" : "Ad"} - Based on: ${promptText.substring(0, 30)}...`
-      : `Sample ${contentType === "social-media-creative" ? "Social Media Post" : contentType === "stock-photo" ? "Stock Photo" : "Ad"} - AI Generation Temporarily Unavailable`
+      ? `Sample ${contentType === "social-media-creative" ? "Social Media Post" : contentType === "stock-photo" ? "Stock Photo" : contentType === "product-photo" ? "Product Photo" : "Ad"} - Based on: ${promptText.substring(0, 30)}...`
+      : `Sample ${contentType === "social-media-creative" ? "Social Media Post" : contentType === "stock-photo" ? "Stock Photo" : contentType === "product-photo" ? "Product Photo" : "Ad"} - AI Generation Temporarily Unavailable`
 
     return `/placeholder.svg?height=${height}&width=${width}&text=${encodeURIComponent(placeholderText)}`
   }
@@ -340,7 +342,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
             brandSettings,
           }
         : {}),
-      // Stock photo doesn't need additional fields
+      // Stock photo and product photo don't need additional fields
     }
 
     addDebugLog(`Generating ${contentType} with payload: ${JSON.stringify(payload, null, 2)}`)
@@ -591,7 +593,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
     if (!prompt.trim()) {
       toast({
         title: "Please enter a prompt",
-        description: `You need to describe the ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"} you want to create.`,
+        description: `You need to describe the ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : contentType === "product-photo" ? "product photo" : "ad"} you want to create.`,
         variant: "destructive",
       })
       return
@@ -600,7 +602,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
     if (!title.trim()) {
       toast({
         title: "Please enter a title",
-        description: `You need to provide a title for your ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"}.`,
+        description: `You need to provide a title for your ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : contentType === "product-photo" ? "product photo" : "ad"}.`,
         variant: "destructive",
       })
       return
@@ -764,8 +766,8 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
         // Show the ad performance analyzer for the first generated image
         setGeneratedAdImage(generatedImages[0]?.url || null)
 
-        // Only show performance analyzer for ads, not stock photos
-        if (contentType !== "stock-photo") {
+        // Only show performance analyzer for ads, not stock photos or product photos
+        if (contentType !== "stock-photo" && contentType !== "product-photo") {
           setShowPerformanceAnalyzer(true)
         }
 
@@ -786,7 +788,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
 
         toast({
           title: "Generation complete!",
-          description: `Successfully generated ${successCount} ${contentType === "social-media-creative" ? "social media" : contentType === "stock-photo" ? "stock photo" : "ad"} variations.`,
+          description: `Successfully generated ${successCount} ${contentType === "social-media-creative" ? "social media" : contentType === "stock-photo" ? "stock photo" : contentType === "product-photo" ? "product photo" : "ad"} variations.`,
         })
 
         // Redirect to library after a short delay
@@ -816,22 +818,36 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
     }
   }
 
-  const promptTips =
-    contentType === "stock-photo"
-      ? [
-          "Be specific about the subject and composition",
-          "Mention the desired lighting (e.g., natural, studio, dramatic)",
-          "Include details about the mood or atmosphere",
-          "Specify if you want people or objects in the image",
-          "Describe the setting or background in detail",
-        ]
-      : [
-          "Be specific about the product or service you're advertising",
-          "Mention the desired mood or emotion (e.g., energetic, calm, professional)",
-          "Include details about colors or visual style",
-          "Specify if you want text or people in the image",
-          "Describe the setting or background",
-        ]
+  // Get prompt tips based on content type
+  const getPromptTips = () => {
+    if (contentType === "stock-photo") {
+      return [
+        "Be specific about the subject and composition",
+        "Mention the desired lighting (e.g., natural, studio, dramatic)",
+        "Include details about the mood or atmosphere",
+        "Specify if you want people or objects in the image",
+        "Describe the setting or background in detail",
+      ]
+    } else if (contentType === "product-photo") {
+      return [
+        "Describe the setting or background in detail",
+        "Mention the desired lighting (e.g., soft, dramatic, studio)",
+        "Specify the mood or atmosphere you want to convey",
+        "Include details about the environment (indoor, outdoor, etc.)",
+        "Describe any props or additional elements you want included",
+      ]
+    } else {
+      return [
+        "Be specific about the product or service you're advertising",
+        "Mention the desired mood or emotion (e.g., energetic, calm, professional)",
+        "Include details about colors or visual style",
+        "Specify if you want text or people in the image",
+        "Describe the setting or background",
+      ]
+    }
+  }
+
+  const promptTips = getPromptTips()
 
   // Handle when a user tries to select a disabled aspect ratio
   const handleDisabledAspectRatio = (id: string) => {
@@ -841,6 +857,11 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
 
   // Get available aspect ratios based on subscription, user status, and content type
   const getAvailableAspectRatios = () => {
+    // For product photos, only show 1:1 square format
+    if (contentType === "product-photo") {
+      return [{ id: "1:1", label: "1:1 (Square)" }]
+    }
+
     // For social media creatives, only show relevant aspect ratios
     if (contentType === "social-media-creative") {
       // All users with Pro or Business subscription
@@ -902,21 +923,40 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
     ) {
       return [
         { id: "1:1", label: "1:1 (Square)" },
-        { id: "4:5", label: "4:5 (Portrait)", disabled: true },
+        { id: "4:5", label: "4:5 (Portrait)" },
         { id: "9:16", label: "9:16 (Story)" },
-        { id: "16:9", label: "16:9 (Landscape)", disabled: true },
-        { id: "1.91:1", label: "1.91:1 (Facebook)", disabled: true },
-        // Google Display Ad Sizes - all disabled for free users
-        { id: "300x250", label: "Medium Rectangle", pixelDimensions: "300×250", disabled: true },
-        { id: "336x280", label: "Large Rectangle", pixelDimensions: "336×280", disabled: true },
-        { id: "728x90", label: "Leaderboard", pixelDimensions: "728×90", disabled: true },
-        { id: "300x600", label: "Half Page", pixelDimensions: "300×600", disabled: true },
-        { id: "250x250", label: "Square", pixelDimensions: "250×250", disabled: true },
-        { id: "200x200", label: "Small Square", pixelDimensions: "200×200", disabled: true },
-        { id: "160x600", label: "Wide Skyscraper", pixelDimensions: "160×600", disabled: true },
-        { id: "320x100", label: "Large Mobile Banner", pixelDimensions: "320×100", disabled: true },
+        { id: "16:9", label: "16:9 (Landscape)" },
+        { id: "1.91:1", label: "1.91:1 (Facebook)" },
+        // Google Display Ad Sizes
+        { id: "300x250", label: "Medium Rectangle (300×250)" },
+        { id: "336x280", label: "Large Rectangle (336×280)" },
+        { id: "728x90", label: "Leaderboard (728×90)" },
+        { id: "300x600", label: "Half Page (300×600)" },
+        { id: "250x250", label: "Square (250×250)" },
+        { id: "200x200", label: "Small Square (200×200)" },
+        { id: "160x600", label: "Wide Skyscraper (160×600)" },
+        { id: "320x100", label: "Large Mobile Banner (320×100)" },
       ]
     }
+
+    // Anonymous users and free users only get 1:1 and 9:16 formats
+    // Other formats are shown but disabled
+    return [
+      { id: "1:1", label: "1:1 (Square)" },
+      { id: "4:5", label: "4:5 (Portrait)", disabled: true },
+      { id: "9:16", label: "9:16 (Story)" },
+      { id: "16:9", label: "16:9 (Landscape)", disabled: true },
+      { id: "1.91:1", label: "1.91:1 (Facebook)", disabled: true },
+      // Google Display Ad Sizes - all disabled for free users
+      { id: "300x250", label: "Medium Rectangle", pixelDimensions: "300×250", disabled: true },
+      { id: "336x280", label: "Large Rectangle", pixelDimensions: "336×280", disabled: true },
+      { id: "728x90", label: "Leaderboard", pixelDimensions: "728×90", disabled: true },
+      { id: "300x600", label: "Half Page", pixelDimensions: "300×600", disabled: true },
+      { id: "250x250", label: "Square", pixelDimensions: "250×250", disabled: true },
+      { id: "200x200", label: "Small Square", pixelDimensions: "200×200", disabled: true },
+      { id: "160x600", label: "Wide Skyscraper", pixelDimensions: "160×600", disabled: true },
+      { id: "320x100", label: "Large Mobile Banner", pixelDimensions: "320×100", disabled: true },
+    ]
   }
 
   // Render different UI based on content type
@@ -932,7 +972,9 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                     ? "Create Social Media Creative"
                     : contentType === "stock-photo"
                       ? "Create Stock Photo"
-                      : "Create Static Image Ad"}
+                      : contentType === "product-photo"
+                        ? "Create Product Photo"
+                        : "Create Static Image Ad"}
                 </h2>
                 <div className="flex items-center gap-4">
                   <UsageCounter
@@ -1027,7 +1069,9 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                       ? "Social Media Post Title"
                       : contentType === "stock-photo"
                         ? "Stock Photo Title"
-                        : "Ad Title"}
+                        : contentType === "product-photo"
+                          ? "Product Photo Title"
+                          : "Ad Title"}
                   </Label>
                   <Input
                     id="title"
@@ -1036,7 +1080,9 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                         ? "social media post"
                         : contentType === "stock-photo"
                           ? "stock photo"
-                          : "ad"
+                          : contentType === "product-photo"
+                            ? "product photo"
+                            : "ad"
                     }`}
                     className="bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                     value={title}
@@ -1044,7 +1090,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                   />
                 </div>
 
-                {/* Website URL input - only show for ad and social media, not for stock photos */}
+                {/* Website URL input - only show for ad, social media, and product photos, not for stock photos */}
                 {contentType !== "stock-photo" && (
                   <div className="space-y-3">
                     <Label htmlFor="website-url" className="flex items-center gap-2">
@@ -1093,7 +1139,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                   </div>
                 )}
 
-                {/* Brand analysis result - only show for ad and social media, not for stock photos */}
+                {/* Brand analysis result - only show for ad, social media, and product photos, not for stock photos */}
                 {contentType !== "stock-photo" && (
                   <AnimatePresence>
                     {brandAnalysis && (
@@ -1124,7 +1170,7 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                   </AnimatePresence>
                 )}
 
-                {/* Brand settings preview - only show for ad and social media, not for stock photos */}
+                {/* Brand settings preview - only show for ad, social media, and product photos, not for stock photos */}
                 {contentType !== "stock-photo" && (
                   <AnimatePresence>
                     {brandSettings && brandSettings.primaryColor && (
@@ -1199,12 +1245,15 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="prompt" className="flex items-center gap-2">
-                          Describe your{" "}
-                          {contentType === "social-media-creative"
-                            ? "social media post"
-                            : contentType === "stock-photo"
-                              ? "stock photo"
-                              : "ad"}
+                          {contentType === "product-photo"
+                            ? "Describe the background or setting of the product photo"
+                            : `Describe your ${
+                                contentType === "social-media-creative"
+                                  ? "social media post"
+                                  : contentType === "stock-photo"
+                                    ? "stock photo"
+                                    : "ad"
+                              }`}
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1237,6 +1286,10 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                               setPrompt(
                                 "A professional, high-quality stock photo with clean composition and natural lighting. The image should be versatile and suitable for various business contexts.",
                               )
+                            } else if (contentType === "product-photo") {
+                              setPrompt(
+                                "A clean, minimalist white background with soft, even lighting to showcase the product. The setting should have a professional studio feel with subtle shadows.",
+                              )
                             } else {
                               setPrompt(
                                 "A professional advertisement for a modern product with clean design, vibrant colors, and clear messaging. The image should be high quality and visually appealing.",
@@ -1250,7 +1303,11 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                       </div>
                       <Textarea
                         id="prompt"
-                        placeholder={`Describe the ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"} you want to create in detail.`}
+                        placeholder={
+                          contentType === "product-photo"
+                            ? "Describe the background, setting, and environment for your product photo in detail."
+                            : `Describe the ${contentType === "social-media-creative" ? "social media post" : contentType === "stock-photo" ? "stock photo" : "ad"} you want to create in detail.`
+                        }
                         className="min-h-[120px] bg-background resize-y transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -1293,16 +1350,23 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                   <TabsContent value="images" className="space-y-4 pt-4">
                     <div className="space-y-3">
                       <Label htmlFor="prompt-with-images">
-                        Describe your{" "}
-                        {contentType === "social-media-creative"
-                          ? "social media post"
-                          : contentType === "stock-photo"
-                            ? "stock photo"
-                            : "ad"}
+                        {contentType === "product-photo"
+                          ? "Describe the background or setting of the product photo"
+                          : `Describe your ${
+                              contentType === "social-media-creative"
+                                ? "social media post"
+                                : contentType === "stock-photo"
+                                  ? "stock photo"
+                                  : "ad"
+                            }`}
                       </Label>
                       <Textarea
                         id="prompt-with-images"
-                        placeholder="Describe how you want to use the uploaded images in your content."
+                        placeholder={
+                          contentType === "product-photo"
+                            ? "Describe how you want to use the uploaded images and the background setting for your product photo."
+                            : "Describe how you want to use the uploaded images in your content."
+                        }
                         className="min-h-[120px] bg-background resize-y transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -1357,26 +1421,29 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                   </TabsContent>
                 </Tabs>
 
-                <div className="space-y-3">
-                  <Label>Aspect Ratios (select at least one)</Label>
-                  <AspectRatioSelector
-                    selected={selectedAspectRatios}
-                    onChange={setSelectedAspectRatios}
-                    options={getAvailableAspectRatios()}
-                    onSelectDisabled={handleDisabledAspectRatio}
-                  />
-                  {isAnonymous ? (
-                    <p className="text-xs text-muted-foreground">
-                      Guest users can only use 1:1 and {contentType === "stock-photo" ? "16:9" : "9:16"} formats. Sign
-                      up for more options.
-                    </p>
-                  ) : subscription.status === "free" ? (
-                    <p className="text-xs text-muted-foreground">
-                      Free plan: Only 1:1 and {contentType === "stock-photo" ? "16:9" : "9:16"} formats available.
-                      Upgrade to Pro or Business for all formats.
-                    </p>
-                  ) : null}
-                </div>
+                {/* Only show aspect ratio selector if not product photo */}
+                {contentType !== "product-photo" && (
+                  <div className="space-y-3">
+                    <Label>Aspect Ratios (select at least one)</Label>
+                    <AspectRatioSelector
+                      selected={selectedAspectRatios}
+                      onChange={setSelectedAspectRatios}
+                      options={getAvailableAspectRatios()}
+                      onSelectDisabled={handleDisabledAspectRatio}
+                    />
+                    {isAnonymous ? (
+                      <p className="text-xs text-muted-foreground">
+                        Guest users can only use 1:1 and {contentType === "stock-photo" ? "16:9" : "9:16"} formats. Sign
+                        up for more options.
+                      </p>
+                    ) : subscription.status === "free" ? (
+                      <p className="text-xs text-muted-foreground">
+                        Free plan: Only 1:1 and {contentType === "stock-photo" ? "16:9" : "9:16"} formats available.
+                        Upgrade to Pro or Business for all formats.
+                      </p>
+                    ) : null}
+                  </div>
+                )}
 
                 {/* Conditional rendering based on content type */}
                 {contentType === "static-image-ad" ? (
@@ -1581,7 +1648,12 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
                   <Button
                     className="w-full bg-primary hover:bg-primary/90 h-12 text-base relative overflow-hidden group"
                     onClick={handleGenerate}
-                    disabled={!prompt || !title || isGenerating || selectedAspectRatios.length === 0}
+                    disabled={
+                      !prompt ||
+                      !title ||
+                      isGenerating ||
+                      (contentType !== "product-photo" && selectedAspectRatios.length === 0)
+                    }
                   >
                     {isGenerating ? (
                       <>
@@ -1632,21 +1704,24 @@ export function AdCreator({ contentType = "static-image-ad" }: AdCreatorProps) {
         subscription={subscription}
         squareFormatOnly={paywallTriggerRatio !== null}
       />
-      {showPerformanceAnalyzer && generatedAdImage && contentType !== "stock-photo" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mt-6"
-        >
-          <AdPerformanceAnalyzer
-            imageUrl={generatedAdImage}
-            adCopy={generatedAdCopy}
-            prompt={prompt}
-            aspectRatio={selectedAspectRatios[0]}
-          />
-        </motion.div>
-      )}
+      {showPerformanceAnalyzer &&
+        generatedAdImage &&
+        contentType !== "stock-photo" &&
+        contentType !== "product-photo" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-6"
+          >
+            <AdPerformanceAnalyzer
+              imageUrl={generatedAdImage}
+              adCopy={generatedAdCopy}
+              prompt={prompt}
+              aspectRatio={selectedAspectRatios[0]}
+            />
+          </motion.div>
+        )}
     </>
   )
 }

@@ -16,11 +16,11 @@ export default function ExamplesPage() {
     },
     {
       id: 2,
-      title: "Fashion Brand Story",
-      description: "Ideal for fashion brands looking to create an emotional connection.",
+      title: "Supplement Company Promotion",
+      description: "Perfect for supplement brands highlighting product benefits and lifestyle.",
       prompt:
-        "A stylish model wearing elegant clothing walking down a Parisian street at sunset, with soft bokeh lights in the background.",
-      imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=600&h=750&auto=format&fit=crop",
+        "A fitness enthusiast holding a supplement bottle after a workout, with visible energy and vitality, in a modern gym setting with soft lighting.",
+      imageUrl: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?q=80&w=600&h=750&auto=format&fit=crop",
       aspectRatio: "4:5",
     },
     {
@@ -126,9 +126,6 @@ export default function ExamplesPage() {
                       alt={example.title}
                       className="object-cover w-full h-64"
                     />
-                    <div className="absolute top-2 right-2">
-                      <span className="bg-black/70 text-white text-xs px-2 py-1 rounded">{example.aspectRatio}</span>
-                    </div>
                   </div>
                   <div className="flex flex-col flex-1 p-4 space-y-2">
                     <h3 className="text-lg font-semibold">{example.title}</h3>

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Wand2, LayoutGrid, Palette, ImageIcon, Clock, Users, Zap } from "lucide-react"
+import { ArrowRight, Wand2, LayoutGrid, Palette, ImageIcon, Clock, Zap } from "lucide-react"
 
 export default function FeaturesPage() {
   return (
@@ -50,10 +50,11 @@ export default function FeaturesPage() {
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl gradient-text">
                   Powerful Features for <br />
-                  Professional Ad Creation
+                  All Your Visual Content Needs
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-6">
-                  Everything you need to create stunning ads for your marketing campaigns
+                  Create ads, social media posts, stock photos, and product images with advanced AI - all within a few
+                  clicks
                 </p>
               </div>
               <div className="mt-8">
@@ -108,10 +109,10 @@ export default function FeaturesPage() {
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <ImageIcon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Image Upload</h3>
+                <h3 className="text-xl font-bold mb-3">Product Photography</h3>
                 <p className="text-muted-foreground">
-                  Combine your existing images with AI-generated elements. Upload product photos or brand assets to
-                  incorporate into your ad designs.
+                  Create professional product images for your e-commerce store without expensive photoshoots. Generate
+                  consistent, high-quality product visuals that boost conversion rates.
                 </p>
               </div>
 
@@ -128,12 +129,12 @@ export default function FeaturesPage() {
 
               <div className="flex flex-col items-start">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                  <Users className="h-6 w-6 text-primary" />
+                  <ImageIcon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Team Collaboration</h3>
+                <h3 className="text-xl font-bold mb-3">Stock Photo Creation</h3>
                 <p className="text-muted-foreground">
-                  Share and collaborate on ad creations with your team. Streamline approval processes and maintain a
-                  central library of assets.
+                  Generate custom stock photos for any purpose with just a text prompt. Create unique visuals without
+                  expensive photoshoots or stock photo subscriptions.
                 </p>
               </div>
             </div>
@@ -148,7 +149,7 @@ export default function FeaturesPage() {
                 How AdCreatify Works
               </h2>
               <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
-                Create professional ads in three simple steps
+                Create professional ads, stock photos, and social media content in three simple steps
               </p>
             </div>
 
@@ -157,10 +158,10 @@ export default function FeaturesPage() {
                 <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm mb-4">
                   1
                 </div>
-                <h3 className="text-xl font-bold mb-3">Describe Your Ad</h3>
+                <h3 className="text-xl font-bold mb-3">Describe Your Content</h3>
                 <p className="text-muted-foreground flex-grow">
-                  Enter a detailed description of the ad you want to create. Include information about your product,
-                  target audience, and desired style.
+                  Enter a detailed description of what you want to create - whether it's an ad, stock photo, social
+                  media post, or product image. Include key details about style and content.
                 </p>
               </div>
 
@@ -194,10 +195,10 @@ export default function FeaturesPage() {
           <div className="container px-4 md:px-6">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text">
-                Advanced Features
+                Advanced AI Features
               </h2>
               <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
-                Unlock more capabilities with our Pro and Business plans
+                Powered by cutting-edge artificial intelligence for all your visual content needs
               </p>
             </div>
 
@@ -223,10 +224,10 @@ export default function FeaturesPage() {
                     <Zap className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold mb-2">Custom Branding</h3>
+                    <h3 className="text-lg font-bold mb-2">Website Product Images</h3>
                     <p className="text-muted-foreground">
-                      Upload your brand assets, colors, and fonts to ensure all generated ads match your brand identity
-                      perfectly.
+                      Create professional product images for your e-commerce store or website. Generate consistent,
+                      high-quality visuals that boost conversion rates.
                     </p>
                   </div>
                 </div>
@@ -278,10 +279,11 @@ export default function FeaturesPage() {
           <div className="container px-4 md:px-6">
             <div className="bg-secondary p-8 md:p-12 rounded-lg border border-border/40 text-center">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl gradient-text mb-4">
-                Ready to Transform Your Ad Creation?
+                Ready to Transform Your Content Creation?
               </h2>
               <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto mb-8">
-                Join thousands of marketers who are saving time and creating better ads with AdCreatify AI.
+                Join thousands of marketers who are saving time and creating better ads, social media posts, stock
+                photos, and product images with AdCreatify AI.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/signup">

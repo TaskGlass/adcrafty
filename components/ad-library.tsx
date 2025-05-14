@@ -13,7 +13,18 @@ import { canUserDownload, trackDownload, trackAnonymousDownload } from "@/lib/us
 import { useRouter } from "next/navigation"
 import { AdCard } from "@/components/ad-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ImageIcon, Search, Filter, Plus, RefreshCw, Grid3X3, Grid2X2, LayoutList, Share2 } from "lucide-react"
+import {
+  ImageIcon,
+  Search,
+  Filter,
+  Plus,
+  RefreshCw,
+  Grid3X3,
+  Grid2X2,
+  LayoutList,
+  Share2,
+  ShoppingBag,
+} from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -209,6 +220,7 @@ export default function AdLibrary() {
     { id: "static-image-ad", label: "Static Image Ad", icon: <ImageIcon className="h-4 w-4 mr-2" /> },
     { id: "social-media-creative", label: "Social Media Creative", icon: <Share2 className="h-4 w-4 mr-2" /> },
     { id: "stock-photo", label: "Stock Photo", icon: <ImageIcon className="h-4 w-4 mr-2" /> },
+    { id: "product-photo", label: "Product Photo", icon: <ShoppingBag className="h-4 w-4 mr-2" /> },
   ]
 
   // Function to get the content type label
