@@ -48,84 +48,96 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="create" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {/* Using flex and flex-col with justify-between to align buttons */}
+          {/* Updated grid layout to be more responsive */}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Static Image Ads Card */}
             <Card className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col">
               <div>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ImageIcon className="h-5 w-5 text-primary" />
-                    Static Image Ads
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 whitespace-nowrap text-base md:text-lg">
+                    <ImageIcon className="h-5 w-5 text-primary flex-shrink-0" />
+                    <span className="truncate">Static Image Ads</span>
                   </CardTitle>
-                  <CardDescription>Create professional static image ads for various platforms</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    Create professional static image ads for various platforms
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-4">
                   <p className="text-sm text-muted-foreground">Perfect for display ads, banners, and print materials</p>
                 </CardContent>
               </div>
-              <div className="mt-auto p-6 pt-0">
+              <div className="mt-auto p-4 pt-0">
                 <Button className="w-full" onClick={() => handleCreateOption("static-image-ad")}>
                   Create Static Ad
                 </Button>
               </div>
             </Card>
 
+            {/* Social Media Creatives Card */}
             <Card className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col">
               <div>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Share2 className="h-5 w-5 text-primary" />
-                    Social Media Creatives
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 whitespace-nowrap text-base md:text-lg">
+                    <Share2 className="h-5 w-5 text-primary flex-shrink-0" />
+                    <span className="truncate">Social Media Creatives</span>
                   </CardTitle>
-                  <CardDescription>Design engaging content for social media platforms</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    Design engaging content for social media platforms
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-4">
                   <p className="text-sm text-muted-foreground">
                     Optimized for Instagram, Facebook, Twitter, and LinkedIn
                   </p>
                 </CardContent>
               </div>
-              <div className="mt-auto p-6 pt-0">
+              <div className="mt-auto p-4 pt-0">
                 <Button className="w-full" onClick={() => handleCreateOption("social-media-creative")}>
-                  Create Social Media Content
+                  Create Social Media
                 </Button>
               </div>
             </Card>
 
+            {/* Stock Photos Card */}
             <Card className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col">
               <div>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ImageIcon className="h-5 w-5 text-primary" />
-                    Stock Photos
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 whitespace-nowrap text-base md:text-lg">
+                    <ImageIcon className="h-5 w-5 text-primary flex-shrink-0" />
+                    <span className="truncate">Stock Photos</span>
                   </CardTitle>
-                  <CardDescription>Generate custom stock photos for your projects</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    Generate custom stock photos for your projects
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-4">
                   <p className="text-sm text-muted-foreground">Create unique images that match your brand's style</p>
                 </CardContent>
               </div>
-              <div className="mt-auto p-6 pt-0">
+              <div className="mt-auto p-4 pt-0">
                 <Button className="w-full" onClick={() => handleCreateOption("stock-photo")}>
                   Create Stock Photo
                 </Button>
               </div>
             </Card>
 
+            {/* Product Photos Card */}
             <Card className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col">
               <div>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingBag className="h-5 w-5 text-primary" />
-                    Product Photos
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 whitespace-nowrap text-base md:text-lg">
+                    <ShoppingBag className="h-5 w-5 text-primary flex-shrink-0" />
+                    <span className="truncate">Product Photos</span>
                   </CardTitle>
-                  <CardDescription>Create professional product photography for e-commerce</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    Create professional product photography for e-commerce
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-4">
                   <p className="text-sm text-muted-foreground">Perfect for online stores, marketplaces, and catalogs</p>
                 </CardContent>
               </div>
-              <div className="mt-auto p-6 pt-0">
+              <div className="mt-auto p-4 pt-0">
                 <Button className="w-full" onClick={() => handleCreateOption("product-photo")}>
                   Create Product Photo
                 </Button>
