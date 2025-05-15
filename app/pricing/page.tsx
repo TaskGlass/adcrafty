@@ -38,7 +38,7 @@ export default function PricingPage() {
       <header className="border-b border-border/40 py-4">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <span className="text-primary text-2xl">AdCreatify</span>
+            <span className="text-primary text-2xl">AdCrafty</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link
@@ -428,7 +428,7 @@ export default function PricingPage() {
                 Ready to Get Started?
               </h2>
               <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto mb-8">
-                Try AdCreatify for free and see how it can transform your ad creation process.
+                Try AdCrafty for free and see how it can transform your ad creation process.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/signup">
@@ -450,7 +450,7 @@ export default function PricingPage() {
       <footer className="border-t border-border/40 py-8">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold">
-            <span className="text-primary">AdCreatify</span>
+            <span className="text-primary">AdCrafty</span>
             <span className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} All rights reserved.
             </span>

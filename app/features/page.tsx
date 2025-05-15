@@ -8,7 +8,7 @@ export default function FeaturesPage() {
       <header className="border-b border-border/40 py-4">
         <div className="container flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <span className="text-primary text-2xl">AdCreatify</span>
+            <span className="text-primary text-2xl">AdCrafty</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
@@ -146,7 +146,7 @@ export default function FeaturesPage() {
           <div className="container px-4 md:px-6">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl gradient-text">
-                How AdCreatify Works
+                How AdCrafty Works
               </h2>
               <p className="mt-4 text-muted-foreground md:text-lg max-w-3xl mx-auto">
                 Create professional ads, stock photos, and social media content in three simple steps
@@ -283,7 +283,7 @@ export default function FeaturesPage() {
               </h2>
               <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto mb-8">
                 Join thousands of marketers who are saving time and creating better ads, social media posts, stock
-                photos, and product images with AdCreatify AI.
+                photos, and product images with AdCrafty AI.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/signup">
@@ -305,7 +305,7 @@ export default function FeaturesPage() {
       <footer className="border-t border-border/40 py-8">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold">
-            <span className="text-primary">AdCreatify</span>
+            <span className="text-primary">AdCrafty</span>
             <span className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} All rights reserved.
             </span>
